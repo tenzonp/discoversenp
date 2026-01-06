@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 
 interface ChatInputProps {
-  onSend: (message: string, imageUrl?: string) => void;
+  onSend: (message: string, imageUrl?: string, generateImagePrompt?: string) => void;
   isLoading: boolean;
 }
 
@@ -115,15 +115,8 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
       const prompt = extractImagePrompt(trimmedInput);
       if (prompt) {
         setInput("");
-        // Send the user message first
-        onSend(trimmedInput);
-        
-        // Generate image
-        const imageUrl = await generateImage(prompt);
-        if (imageUrl) {
-          // Send the image as assistant would, but through the chat
-          onSend(`[Image: ${imageUrl}]`, imageUrl);
-        }
+        // Send the user message first, with flag to trigger image generation
+        onSend(trimmedInput, undefined, prompt);
         return;
       }
     }
