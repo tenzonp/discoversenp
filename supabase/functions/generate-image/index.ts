@@ -26,7 +26,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
@@ -49,22 +48,18 @@ serve(async (req) => {
     // Check usage in last 24 hours
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
-    const { count, error: countError } = await supabase
+    const { count } = await supabase
       .from("image_generation_usage")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .gte("generated_at", twentyFourHoursAgo);
-
-    if (countError) {
-      console.error("Count error:", countError);
-    }
 
     const currentCount = count || 0;
     
     if (currentCount >= DAILY_LIMIT) {
       return new Response(JSON.stringify({ 
         error: "Daily limit reached", 
-        message: `You've used all ${DAILY_LIMIT} image generations for today. Try again tomorrow!`,
+        message: `Aja ko ${DAILY_LIMIT} image sakiyo! Bholi try gara 🙏`,
         remaining: 0 
       }), {
         status: 429,
@@ -72,9 +67,6 @@ serve(async (req) => {
       });
     }
 
-    console.log(`User ${user.id} generating image. Usage: ${currentCount}/${DAILY_LIMIT}`);
-
-    // Generate image using Lovable AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured");
@@ -88,12 +80,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: `Generate a high quality image: ${prompt}`,
-          },
-        ],
+        messages: [{ role: "user", content: `Generate a high quality image: ${prompt}` }],
         modalities: ["image", "text"],
       }),
     });
@@ -101,29 +88,51 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      throw new Error("Failed to generate image");
+      throw new Error("Image generate garna sakiyena");
     }
 
     const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const base64Image = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-    if (!imageUrl) {
+    if (!base64Image) {
       throw new Error("No image generated");
     }
+
+    // Extract base64 data and upload to storage
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+    const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    const fileName = `${user.id}/generated-${Date.now()}.png`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from("chat-images")
+      .upload(fileName, imageBuffer, {
+        contentType: "image/png",
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      throw new Error("Failed to save image");
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("chat-images")
+      .getPublicUrl(fileName);
 
     // Record usage
     await supabase.from("image_generation_usage").insert({
       user_id: user.id,
       prompt: prompt.slice(0, 500),
-      image_url: imageUrl.slice(0, 500), // Store truncated reference
+      image_url: publicUrl,
     });
 
     const remaining = DAILY_LIMIT - currentCount - 1;
 
     return new Response(JSON.stringify({ 
-      imageUrl, 
+      imageUrl: publicUrl, 
       remaining,
-      message: `Image generated! ${remaining} remaining today.`
+      message: `Image ready! ${remaining} baaki cha aja 🎨`
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
