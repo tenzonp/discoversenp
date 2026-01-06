@@ -1,17 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, MicOff, Image, X, Loader2, Sparkles, ImagePlus } from "lucide-react";
+import { Send, Mic, MicOff, Image, X, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 
 interface ChatInputProps {
   onSend: (message: string, imageUrl?: string) => void;
@@ -24,8 +18,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("en-US");
-  const [showImageGen, setShowImageGen] = useState(false);
-  const [imagePrompt, setImagePrompt] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -39,16 +31,12 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   } = useVoiceInput({
     language: voiceLang,
     onResult: (result) => {
-      if (result.isFinal) {
-        setInput(prev => prev + result.transcript + " ");
-      }
+      if (result.isFinal) setInput(prev => prev + result.transcript + " ");
     },
     onError: () => {}
   });
 
-  useEffect(() => {
-    checkRemaining();
-  }, [checkRemaining]);
+  useEffect(() => { checkRemaining(); }, [checkRemaining]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -58,11 +46,27 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   }, [input]);
 
+  // Check if input is an image generation request
+  const isImageRequest = (text: string) => {
+    const triggers = [
+      /^generate\s+/i, /^create\s+/i, /^draw\s+/i, /^make\s+/i,
+      /^banau\s+/i, /^bana\s+/i, /image\s+banau/i, /photo\s+banau/i,
+      /^imagine\s+/i, /picture\s+of/i
+    ];
+    return triggers.some(t => t.test(text.trim()));
+  };
+
+  const extractImagePrompt = (text: string) => {
+    return text.replace(/^(generate|create|draw|make|banau|bana|imagine)\s+/i, "")
+               .replace(/\s*(image|photo|picture)\s*(banau|of)?\s*/i, " ")
+               .trim();
+  };
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
+        toast({ title: "File dherai thulo", description: "5MB bhanda sano file use gara", variant: "destructive" });
         return;
       }
       setSelectedImage(file);
@@ -84,7 +88,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({ title: "Login Required", variant: "destructive" });
+        toast({ title: "Login gara pahila", variant: "destructive" });
         return null;
       }
       const fileExt = selectedImage.name.split(".").pop();
@@ -94,32 +98,44 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
       const { data: { publicUrl } } = supabase.storage.from("chat-images").getPublicUrl(fileName);
       return publicUrl;
     } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+      toast({ title: "Upload fail bhayo", variant: "destructive" });
       return null;
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
-    const imageUrl = await generateImage(imagePrompt);
-    if (imageUrl) {
-      onSend(`Generated: "${imagePrompt}"`, imageUrl);
-      setImagePrompt("");
-      setShowImageGen(false);
-    }
-  };
-
   const handleSubmit = async () => {
-    if ((!input.trim() && !selectedImage) || isLoading || isUploading) return;
+    if ((!input.trim() && !selectedImage) || isLoading || isUploading || isGenerating) return;
+
+    const trimmedInput = input.trim();
+
+    // Check if this is an image generation request
+    if (isImageRequest(trimmedInput) && remaining && remaining > 0) {
+      const prompt = extractImagePrompt(trimmedInput);
+      if (prompt) {
+        setInput("");
+        // Send the user message first
+        onSend(trimmedInput);
+        
+        // Generate image
+        const imageUrl = await generateImage(prompt);
+        if (imageUrl) {
+          // Send the image as assistant would, but through the chat
+          onSend(`[Image: ${imageUrl}]`, imageUrl);
+        }
+        return;
+      }
+    }
+
     let imageUrl: string | undefined;
     if (selectedImage) {
       const url = await uploadImage();
       if (url) imageUrl = url;
       else if (selectedImage) return;
     }
-    onSend(input, imageUrl);
+
+    onSend(trimmedInput, imageUrl);
     setInput("");
     removeImage();
   };
@@ -151,38 +167,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           <Image className="w-5 h-5" />
         </Button>
 
-        <Popover open={showImageGen} onOpenChange={setShowImageGen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={isLoading || isGenerating} className="h-10 w-10 rounded-full flex-shrink-0 relative">
-              <ImagePlus className="w-5 h-5" />
-              {remaining !== null && remaining > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-[10px] rounded-full flex items-center justify-center font-bold text-accent-foreground">
-                  {remaining}
-                </span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72" align="start">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-accent" />
-                <span className="font-medium text-sm">Generate Image</span>
-                <span className="text-xs text-muted-foreground ml-auto">{remaining}/5</span>
-              </div>
-              <Input
-                placeholder="Describe the image..."
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleGenerateImage()}
-                disabled={isGenerating || remaining === 0}
-              />
-              <Button onClick={handleGenerateImage} disabled={!imagePrompt.trim() || isGenerating || remaining === 0} className="w-full" size="sm">
-                {isGenerating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : remaining === 0 ? "Limit reached" : "Generate"}
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
         {voiceSupported && (
           <Button
             variant={isListening ? "default" : "ghost"}
@@ -201,7 +185,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening..." : "Message..."}
+            placeholder={isListening ? "Sunirako..." : "Message lekha... (\"draw cat\" for images)"}
             rows={1}
             className={cn(
               "w-full px-4 py-2.5 rounded-2xl bg-secondary border-0 text-sm resize-none placeholder:text-muted-foreground",
@@ -210,15 +194,21 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             )}
             disabled={isLoading}
           />
+          {remaining !== null && remaining > 0 && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground">
+              <Sparkles className="w-3 h-3" />
+              {remaining}
+            </div>
+          )}
         </div>
 
         <Button
           onClick={handleSubmit}
-          disabled={(!input.trim() && !selectedImage) || isLoading || isUploading}
+          disabled={(!input.trim() && !selectedImage) || isLoading || isUploading || isGenerating}
           className="h-10 w-10 rounded-full flex-shrink-0 bg-foreground text-background hover:bg-foreground/90"
           size="icon"
         >
-          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {isUploading || isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
     </div>
