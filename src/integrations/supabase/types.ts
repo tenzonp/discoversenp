@@ -115,6 +115,30 @@ export type Database = {
         }
         Relationships: []
       }
+      image_generation_usage: {
+        Row: {
+          generated_at: string
+          id: string
+          image_url: string | null
+          prompt: string | null
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          image_url?: string | null
+          prompt?: string | null
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          image_url?: string | null
+          prompt?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
