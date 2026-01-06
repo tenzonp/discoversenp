@@ -8,6 +8,9 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ConversationList } from "@/components/chat/ConversationList";
+import { AlertCircle } from "lucide-react";
+
+const MAX_MESSAGES = 100;
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -26,6 +29,7 @@ const Chat = () => {
   } = useChatHistory(user?.id, "friend");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLimitReached = messages.length >= MAX_MESSAGES;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,12 +41,15 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleBack = () => navigate("/");
+  const handleSend = (content: string, imageUrl?: string) => {
+    if (isLimitReached) return;
+    sendMessage(content, imageUrl);
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[100dvh] bg-background">
-        <div className="animate-pulse-soft w-10 h-10 rounded-full bg-primary" />
+        <div className="w-8 h-8 rounded-full border-2 border-foreground border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -50,16 +57,16 @@ const Chat = () => {
   return (
     <div className="flex flex-col h-[100dvh] bg-background">
       <ChatHeader 
-        onBack={handleBack} 
+        onBack={() => navigate("/")} 
         onClear={clearChat}
         onShowHistory={() => setShowHistory(true)}
       />
 
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <WelcomeScreen onSuggestionClick={sendMessage} />
+          <WelcomeScreen onSuggestionClick={handleSend} />
         ) : (
-          <div className="px-4 py-4 space-y-4 max-w-3xl mx-auto">
+          <div className="px-4 py-4 space-y-3 max-w-2xl mx-auto">
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
@@ -71,7 +78,16 @@ const Chat = () => {
         )}
       </div>
 
-      <ChatInput onSend={sendMessage} isLoading={isLoading} />
+      {isLimitReached ? (
+        <div className="p-4 border-t border-border bg-secondary/50">
+          <div className="flex items-center gap-3 max-w-2xl mx-auto text-sm text-muted-foreground">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <p>This chat has reached 100 messages. Start a new chat to continue.</p>
+          </div>
+        </div>
+      ) : (
+        <ChatInput onSend={handleSend} isLoading={isLoading} />
+      )}
 
       {showHistory && (
         <ConversationList

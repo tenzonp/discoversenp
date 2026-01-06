@@ -16,18 +16,21 @@ import {
   BookText,
   Languages,
   Loader2,
-  X
+  X,
+  AlertCircle
 } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { useToast } from "@/hooks/use-toast";
 
+const MAX_MESSAGES = 100;
+
 const subjects = [
-  { icon: Calculator, name: "Math", nepali: "गणित", color: "from-blue-500 to-cyan-500" },
-  { icon: FlaskConical, name: "Science", nepali: "विज्ञान", color: "from-green-500 to-emerald-500" },
-  { icon: Globe, name: "Social", nepali: "सामाजिक", color: "from-amber-500 to-orange-500" },
-  { icon: BookText, name: "Nepali", nepali: "नेपाली", color: "from-red-500 to-rose-500" },
-  { icon: Languages, name: "English", nepali: "अंग्रेजी", color: "from-purple-500 to-pink-500" },
+  { icon: Calculator, name: "Math", color: "bg-blue-500" },
+  { icon: FlaskConical, name: "Science", color: "bg-green-500" },
+  { icon: Globe, name: "Social", color: "bg-amber-500" },
+  { icon: BookText, name: "Nepali", color: "bg-red-500" },
+  { icon: Languages, name: "English", color: "bg-purple-500" },
 ];
 
 const Student = () => {
@@ -49,10 +52,10 @@ const Student = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const isLimitReached = messages.length >= MAX_MESSAGES;
+
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
+    if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -64,85 +67,45 @@ const Student = () => {
     if (!file || !user) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        variant: "destructive",
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB"
-      });
+      toast({ variant: "destructive", title: "File too large", description: "Max 5MB" });
       return;
     }
 
     setIsUploading(true);
-
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('homework-images')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('homework-images')
-        .getPublicUrl(fileName);
-
+      const { error } = await supabase.storage.from('homework-images').upload(fileName, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('homework-images').getPublicUrl(fileName);
       setUploadedImage(publicUrl);
-      toast({
-        title: "Image uploaded! 📸",
-        description: "Ready to analyze your homework"
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "Please try again"
-      });
+      toast({ title: "Image uploaded!" });
+    } catch {
+      toast({ variant: "destructive", title: "Upload failed" });
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleSend = () => {
-    if (!inputValue.trim() && !uploadedImage) return;
-
-    let messageContent = "";
-    
-    if (selectedSubject) {
-      messageContent = `[${selectedSubject} Homework Help]\n\n`;
-    }
-    
-    if (uploadedImage) {
-      messageContent += `[Image attached: ${uploadedImage}]\n\n`;
-    }
-    
-    messageContent += inputValue || "Please help me solve this question from the image.";
-
-    sendMessage(messageContent);
+    if ((!inputValue.trim() && !uploadedImage) || isLimitReached) return;
+    let content = selectedSubject ? `[${selectedSubject}] ` : "";
+    if (uploadedImage) content += `[Image: ${uploadedImage}]\n\n`;
+    content += inputValue || "Help me solve this.";
+    sendMessage(content);
     setInputValue("");
     setUploadedImage(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const startSubjectHelp = (subject: string) => {
-    setSelectedSubject(subject);
-    sendMessage(`[Student Mode - ${subject}]\n\nHello! I need help with my ${subject} homework. Please act as a friendly tutor who explains things step by step in simple language. Use Nepali when needed to help me understand better.`);
+  const startSubject = (name: string) => {
+    setSelectedSubject(name);
+    sendMessage(`[Student - ${name}] Hello! I need help with ${name}. Explain step by step.`);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse-soft">
-          <GraduationCap className="w-12 h-12 text-teal-500" />
-        </div>
+        <div className="w-8 h-8 rounded-full border-2 border-foreground border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -150,179 +113,101 @@ const Student = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="safe-area-top px-4 py-3 flex items-center gap-3 border-b border-border/50 bg-card/80 backdrop-blur-lg sticky top-0 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            if (messages.length > 0) {
-              clearChat();
-              setSelectedSubject(null);
-            } else {
-              navigate("/");
-            }
-          }}
-          className="rounded-full"
-        >
+      <header className="safe-area-top px-4 py-3 flex items-center gap-3 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-10">
+        <Button variant="ghost" size="icon" onClick={() => messages.length ? (clearChat(), setSelectedSubject(null)) : navigate("/")} className="rounded-full h-9 w-9">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+        <div className="flex items-center gap-2 flex-1">
+          <div className="w-8 h-8 rounded-xl bg-teal-500 flex items-center justify-center">
             <GraduationCap className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="font-semibold text-sm">Student Mode</h1>
-            <p className="text-xs text-muted-foreground">
-              {selectedSubject || "Homework Help"}
-            </p>
+            <h1 className="font-semibold text-sm">Student</h1>
+            <p className="text-xs text-muted-foreground">{selectedSubject || "Homework Help"}</p>
           </div>
         </div>
         {messages.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              clearChat();
-              setSelectedSubject(null);
-            }}
-            className="ml-auto text-xs"
-          >
-            New Session
+          <Button variant="ghost" size="sm" onClick={() => { clearChat(); setSelectedSubject(null); }} className="text-xs">
+            New
           </Button>
         )}
       </header>
 
       {messages.length === 0 ? (
-        /* Subject Selection */
-        <div className="flex-1 p-4 space-y-6 overflow-y-auto safe-area-bottom">
-          <div className="text-center py-6">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-lg mb-4">
-              <GraduationCap className="w-10 h-10 text-white" />
+        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-teal-500 flex items-center justify-center mb-4">
+              <GraduationCap className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Student Mode 📚</h2>
-            <p className="text-muted-foreground text-sm">
-              Homework help गर्छु • Step-by-step explanation
-            </p>
+            <h2 className="text-xl font-semibold mb-2">Student Mode</h2>
+            <p className="text-muted-foreground text-sm">Homework help with step-by-step explanations</p>
           </div>
 
-          {/* Subject Selection */}
-          <div className="space-y-3">
-            <h3 className="font-medium text-sm text-center">Subject छान्नुहोस्:</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {subjects.map((subject) => (
-                <button
-                  key={subject.name}
-                  onClick={() => startSubjectHelp(subject.name)}
-                  className="p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all active:scale-[0.98] text-left"
-                >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${subject.color} flex items-center justify-center mb-2`}>
-                    <subject.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h4 className="font-semibold">{subject.name}</h4>
-                  <p className="text-xs text-muted-foreground">{subject.nepali}</p>
-                </button>
-              ))}
+          <div className="grid grid-cols-3 gap-2">
+            {subjects.map((s) => (
+              <button key={s.name} onClick={() => startSubject(s.name)} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all">
+                <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center`}>
+                  <s.icon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xs font-medium">{s.name}</span>
+              </button>
+            ))}
+          </div>
+
+          <button onClick={() => fileInputRef.current?.click()} className="w-full p-6 rounded-xl border-2 border-dashed border-border hover:border-foreground/30 transition-all flex flex-col items-center gap-2">
+            <Camera className="w-8 h-8 text-muted-foreground" />
+            <div className="text-center">
+              <p className="font-medium text-sm">Upload Photo</p>
+              <p className="text-xs text-muted-foreground">Take a picture of your question</p>
             </div>
-          </div>
-
-          {/* Image Upload Option */}
-          <div className="space-y-3">
-            <h3 className="font-medium text-sm text-center">वा Photo upload गर्नुहोस्:</h3>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-all flex flex-col items-center gap-3"
-            >
-              <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center">
-                <Camera className="w-7 h-7 text-muted-foreground" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium">Upload Homework Photo</p>
-                <p className="text-xs text-muted-foreground">Question को photo लिनुहोस्</p>
-              </div>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-          </div>
-
-          {/* Tips */}
-          <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20">
-            <h4 className="font-medium text-sm mb-2 text-teal-600">💡 Tips:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Clear photo राख्नुहोस्</li>
-              <li>• एक question मात्र राख्नुहोस्</li>
-              <li>• Step-by-step explanation माग्नुहोस्</li>
-            </ul>
-          </div>
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
         </div>
       ) : (
-        /* Chat Interface */
         <>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
             {isLoading && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Image Preview */}
           {uploadedImage && (
-            <div className="px-4 py-2 border-t border-border/50">
+            <div className="px-4 py-2 border-t border-border">
               <div className="relative inline-block">
-                <img
-                  src={uploadedImage}
-                  alt="Uploaded homework"
-                  className="h-20 rounded-lg object-cover"
-                />
-                <button
-                  onClick={() => setUploadedImage(null)}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
+                <img src={uploadedImage} alt="Homework" className="h-16 rounded-lg" />
+                <button onClick={() => setUploadedImage(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center">
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* Input */}
-          <div className="safe-area-bottom p-4 border-t border-border/50 bg-card/80 backdrop-blur-lg">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="h-12 w-12 rounded-xl shrink-0"
-              >
-                {isUploading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <ImageIcon className="w-5 h-5" />
-                )}
-              </Button>
-              <textarea
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Question लेख्नुहोस्..."
-                rows={1}
-                className="flex-1 px-4 py-3 rounded-xl bg-background border border-border/50 focus:outline-none focus:border-primary resize-none"
-                style={{ minHeight: "48px", maxHeight: "120px" }}
-              />
-              <Button
-                onClick={handleSend}
-                disabled={(!inputValue.trim() && !uploadedImage) || isLoading}
-                className="h-12 w-12 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 shrink-0"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
+          {isLimitReached ? (
+            <div className="p-4 border-t border-border bg-secondary/50">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <AlertCircle className="w-5 h-5" />
+                <p>100 message limit reached. Start a new session.</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="safe-area-bottom p-3 border-t border-border bg-background">
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="h-10 w-10 rounded-full">
+                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                </Button>
+                <input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSend())}
+                  placeholder="Ask a question..."
+                  className="flex-1 px-4 py-2.5 rounded-2xl bg-secondary border-0 text-sm focus:outline-none focus:ring-1 focus:ring-foreground/20"
+                />
+                <Button onClick={handleSend} disabled={(!inputValue.trim() && !uploadedImage) || isLoading} className="h-10 w-10 rounded-full bg-teal-500 hover:bg-teal-600" size="icon">
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
