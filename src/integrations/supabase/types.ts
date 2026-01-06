@@ -171,6 +171,42 @@ export type Database = {
           },
         ]
       }
+      mistake_patterns: {
+        Row: {
+          context: string | null
+          correction: string | null
+          detected_at: string
+          frequency: number | null
+          id: string
+          mistake_text: string
+          mistake_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          correction?: string | null
+          detected_at?: string
+          frequency?: number | null
+          id?: string
+          mistake_text: string
+          mistake_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          correction?: string | null
+          detected_at?: string
+          frequency?: number | null
+          id?: string
+          mistake_text?: string
+          mistake_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -228,6 +264,72 @@ export type Database = {
         }
         Relationships: []
       }
+      session_emotions: {
+        Row: {
+          confidence_level: number | null
+          detected_emotion: string | null
+          energy_level: number | null
+          id: string
+          message_text: string | null
+          session_type: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          confidence_level?: number | null
+          detected_emotion?: string | null
+          energy_level?: number | null
+          id?: string
+          message_text?: string | null
+          session_type: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          confidence_level?: number | null
+          detected_emotion?: string | null
+          energy_level?: number | null
+          id?: string
+          message_text?: string | null
+          session_type?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_buddies: {
+        Row: {
+          compatibility_score: number | null
+          created_at: string
+          id: string
+          match_reason: string | null
+          partner_id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          partner_id: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compatibility_score?: number | null
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          partner_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_memory: {
         Row: {
           created_at: string
@@ -252,6 +354,57 @@ export type Database = {
           updated_at?: string
           user_id?: string
           value?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          ai_personality: string | null
+          average_session_minutes: number | null
+          created_at: string
+          detected_mood_preference: string | null
+          encouragement_level: string | null
+          id: string
+          learning_style: string | null
+          preferred_pace: string | null
+          strong_areas: Json | null
+          study_goals: Json | null
+          total_sessions: number | null
+          updated_at: string
+          user_id: string
+          weak_areas: Json | null
+        }
+        Insert: {
+          ai_personality?: string | null
+          average_session_minutes?: number | null
+          created_at?: string
+          detected_mood_preference?: string | null
+          encouragement_level?: string | null
+          id?: string
+          learning_style?: string | null
+          preferred_pace?: string | null
+          strong_areas?: Json | null
+          study_goals?: Json | null
+          total_sessions?: number | null
+          updated_at?: string
+          user_id: string
+          weak_areas?: Json | null
+        }
+        Update: {
+          ai_personality?: string | null
+          average_session_minutes?: number | null
+          created_at?: string
+          detected_mood_preference?: string | null
+          encouragement_level?: string | null
+          id?: string
+          learning_style?: string | null
+          preferred_pace?: string | null
+          strong_areas?: Json | null
+          study_goals?: Json | null
+          total_sessions?: number | null
+          updated_at?: string
+          user_id?: string
+          weak_areas?: Json | null
         }
         Relationships: []
       }
