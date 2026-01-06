@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -60,27 +60,6 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Bhote AI specific colors
-        saffron: {
-          50: "hsl(35 100% 97%)",
-          100: "hsl(35 100% 92%)",
-          200: "hsl(32 100% 85%)",
-          300: "hsl(30 100% 75%)",
-          400: "hsl(28 95% 60%)",
-          500: "hsl(28 95% 55%)",
-          600: "hsl(25 90% 48%)",
-          700: "hsl(22 85% 40%)",
-        },
-        teal: {
-          50: "hsl(185 40% 97%)",
-          100: "hsl(185 40% 90%)",
-          200: "hsl(185 42% 75%)",
-          300: "hsl(185 44% 55%)",
-          400: "hsl(185 45% 45%)",
-          500: "hsl(185 45% 35%)",
-          600: "hsl(190 48% 28%)",
-          700: "hsl(195 50% 22%)",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -92,7 +71,6 @@ export default {
       boxShadow: {
         soft: "var(--shadow-soft)",
         card: "var(--shadow-card)",
-        glow: "var(--shadow-glow)",
       },
       keyframes: {
         "accordion-down": {
@@ -103,15 +81,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "bounce-gentle": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-5px)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "bounce-gentle": "bounce-gentle 2s ease-in-out infinite",
       },
     },
   },

@@ -23,7 +23,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("ne-NP");
+  const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("en-US");
   const [showImageGen, setShowImageGen] = useState(false);
   const [imagePrompt, setImagePrompt] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -43,27 +43,18 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
         setInput(prev => prev + result.transcript + " ");
       }
     },
-    onError: (error) => {
-      toast({
-        title: "Voice Error",
-        description: error === "not-allowed" 
-          ? "Please allow microphone access" 
-          : "Voice recognition failed",
-        variant: "destructive",
-      });
-    }
+    onError: () => {}
   });
 
   useEffect(() => {
     checkRemaining();
   }, [checkRemaining]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+      textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
     }
   }, [input]);
 
@@ -71,19 +62,12 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image under 5MB",
-          variant: "destructive",
-        });
+        toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
         return;
       }
-
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -91,47 +75,26 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const removeImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const uploadImage = async (): Promise<string | null> => {
     if (!selectedImage) return null;
-
     setIsUploading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Login Required",
-          description: "Please login to upload images",
-          variant: "destructive",
-        });
+        toast({ title: "Login Required", variant: "destructive" });
         return null;
       }
-
       const fileExt = selectedImage.name.split(".").pop();
-      const fileName = `${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-images")
-        .upload(fileName, selectedImage);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("chat-images")
-        .getPublicUrl(fileName);
-
+      const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
+      const { error } = await supabase.storage.from("chat-images").upload(fileName, selectedImage);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("chat-images").getPublicUrl(fileName);
       return publicUrl;
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
       return null;
     } finally {
       setIsUploading(false);
@@ -140,11 +103,9 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   const handleGenerateImage = async () => {
     if (!imagePrompt.trim()) return;
-    
     const imageUrl = await generateImage(imagePrompt);
     if (imageUrl) {
-      // Send the generated image in chat
-      onSend(`Generated image: "${imagePrompt}"`, imageUrl);
+      onSend(`Generated: "${imagePrompt}"`, imageUrl);
       setImagePrompt("");
       setShowImageGen(false);
     }
@@ -152,18 +113,12 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   const handleSubmit = async () => {
     if ((!input.trim() && !selectedImage) || isLoading || isUploading) return;
-
     let imageUrl: string | undefined;
-    
     if (selectedImage) {
       const url = await uploadImage();
-      if (url) {
-        imageUrl = url;
-      } else if (selectedImage) {
-        return; // Upload failed, don't send
-      }
+      if (url) imageUrl = url;
+      else if (selectedImage) return;
     }
-
     onSend(input, imageUrl);
     setInput("");
     removeImage();
@@ -176,133 +131,68 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   };
 
-  const toggleVoiceLang = () => {
-    setVoiceLang(prev => prev === "ne-NP" ? "en-US" : "ne-NP");
-  };
-
   return (
-    <div className="p-3 border-t border-border bg-card/80 backdrop-blur-sm safe-area-bottom">
-      {/* Image Preview */}
+    <div className="p-3 border-t border-border bg-background safe-area-bottom">
       {imagePreview && (
-        <div className="max-w-3xl mx-auto mb-2">
+        <div className="max-w-2xl mx-auto mb-2">
           <div className="relative inline-block">
-            <img 
-              src={imagePreview} 
-              alt="Preview" 
-              className="h-20 w-auto rounded-lg border border-border"
-            />
-            <button
-              onClick={removeImage}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
-            >
-              <X className="w-4 h-4" />
+            <img src={imagePreview} alt="Preview" className="h-16 rounded-lg border border-border" />
+            <button onClick={removeImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-foreground text-background rounded-full flex items-center justify-center">
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
       )}
 
-      <div className="flex items-end gap-2 max-w-3xl mx-auto">
-        {/* Image Upload Button */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageSelect}
-          className="hidden"
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isLoading || isUploading}
-          className="h-10 w-10 flex-shrink-0 rounded-full"
-        >
-          <Image className="w-5 h-5 text-muted-foreground" />
+      <div className="flex items-end gap-2 max-w-2xl mx-auto">
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+        
+        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isUploading} className="h-10 w-10 rounded-full flex-shrink-0">
+          <Image className="w-5 h-5" />
         </Button>
 
-        {/* Image Generation Button */}
         <Popover open={showImageGen} onOpenChange={setShowImageGen}>
           <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isLoading || isGenerating}
-              className="h-10 w-10 flex-shrink-0 rounded-full relative"
-            >
-              <ImagePlus className="w-5 h-5 text-muted-foreground" />
+            <Button variant="ghost" size="icon" disabled={isLoading || isGenerating} className="h-10 w-10 rounded-full flex-shrink-0 relative">
+              <ImagePlus className="w-5 h-5" />
               {remaining !== null && remaining > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent text-[10px] rounded-full flex items-center justify-center font-bold text-accent-foreground">
                   {remaining}
                 </span>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80" align="start">
+          <PopoverContent className="w-72" align="start">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <h4 className="font-medium text-sm">Generate Image</h4>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {remaining !== null ? `${remaining}/5 left` : ""}
-                </span>
+                <Sparkles className="w-4 h-4 text-accent" />
+                <span className="font-medium text-sm">Generate Image</span>
+                <span className="text-xs text-muted-foreground ml-auto">{remaining}/5</span>
               </div>
               <Input
-                placeholder="Describe the image you want..."
+                placeholder="Describe the image..."
                 value={imagePrompt}
                 onChange={(e) => setImagePrompt(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleGenerateImage()}
                 disabled={isGenerating || remaining === 0}
               />
-              <Button 
-                onClick={handleGenerateImage} 
-                disabled={!imagePrompt.trim() || isGenerating || remaining === 0}
-                className="w-full"
-                size="sm"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : remaining === 0 ? (
-                  "Limit reached (try tomorrow)"
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate
-                  </>
-                )}
+              <Button onClick={handleGenerateImage} disabled={!imagePrompt.trim() || isGenerating || remaining === 0} className="w-full" size="sm">
+                {isGenerating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</> : remaining === 0 ? "Limit reached" : "Generate"}
               </Button>
             </div>
           </PopoverContent>
         </Popover>
 
-        {/* Voice Input Button */}
         {voiceSupported && (
-          <div className="flex flex-col items-center gap-0.5">
-            <Button
-              variant={isListening ? "default" : "ghost"}
-              size="icon"
-              onClick={toggleListening}
-              disabled={isLoading}
-              className={cn(
-                "h-10 w-10 flex-shrink-0 rounded-full transition-all",
-                isListening && "bg-red-500 hover:bg-red-600 animate-pulse"
-              )}
-            >
-              {isListening ? (
-                <MicOff className="w-5 h-5" />
-              ) : (
-                <Mic className="w-5 h-5 text-muted-foreground" />
-              )}
-            </Button>
-            <button
-              onClick={toggleVoiceLang}
-              className="text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              {voiceLang === "ne-NP" ? "🇳🇵" : "🇺🇸"}
-            </button>
-          </div>
+          <Button
+            variant={isListening ? "default" : "ghost"}
+            size="icon"
+            onClick={toggleListening}
+            disabled={isLoading}
+            className={cn("h-10 w-10 rounded-full flex-shrink-0", isListening && "bg-red-500 hover:bg-red-600")}
+          >
+            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </Button>
         )}
 
         <div className="flex-1 relative">
@@ -311,39 +201,24 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening..." : "Message Bhote..."}
+            placeholder={isListening ? "Listening..." : "Message..."}
             rows={1}
             className={cn(
-              "w-full px-4 py-3 pr-12 rounded-2xl bg-muted border-0",
-              "focus:outline-none focus:ring-2 focus:ring-primary/30",
-              "text-sm resize-none placeholder:text-muted-foreground/60",
-              "transition-all duration-200",
-              isListening && "ring-2 ring-red-500/50"
+              "w-full px-4 py-2.5 rounded-2xl bg-secondary border-0 text-sm resize-none placeholder:text-muted-foreground",
+              "focus:outline-none focus:ring-1 focus:ring-foreground/20",
+              isListening && "ring-1 ring-red-500"
             )}
             disabled={isLoading}
           />
-          {isListening && transcript && (
-            <div className="absolute left-4 right-4 bottom-full mb-1 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
-              {transcript}
-            </div>
-          )}
         </div>
 
         <Button
-          variant="chat"
-          size="icon"
           onClick={handleSubmit}
           disabled={(!input.trim() && !selectedImage) || isLoading || isUploading}
-          className={cn(
-            "h-10 w-10 flex-shrink-0 transition-all duration-300",
-            (input.trim() || selectedImage) && !isLoading ? "scale-100 opacity-100" : "scale-95 opacity-70"
-          )}
+          className="h-10 w-10 rounded-full flex-shrink-0 bg-foreground text-background hover:bg-foreground/90"
+          size="icon"
         >
-          {isUploading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className={cn("w-4 h-4", isLoading && "animate-pulse")} />
-          )}
+          {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
     </div>
