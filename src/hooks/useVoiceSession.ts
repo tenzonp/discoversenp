@@ -29,6 +29,8 @@ export function useVoiceSession(userId: string | undefined) {
   const [transcript, setTranscript] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState(MAX_FREE_SECONDS);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
+  const [speakingDuration, setSpeakingDuration] = useState(0);
   const [liveScore, setLiveScore] = useState<LiveScore>({
     fluency: 0,
     vocabulary: 0,
@@ -40,10 +42,12 @@ export function useVoiceSession(userId: string | undefined) {
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const speakingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesRef = useRef<VoiceMessage[]>([]);
   const isSessionActiveRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const isProcessingRef = useRef(false);
+  const speakingStartRef = useRef<number | null>(null);
   const { toast } = useToast();
 
   // Keep refs in sync
@@ -277,9 +281,32 @@ export function useVoiceSession(userId: string | undefined) {
         }
       }
 
-      setTranscript(interimTranscript || finalTranscript);
+      const currentTranscript = interimTranscript || finalTranscript;
+      setTranscript(currentTranscript);
+      
+      // Track speaking start time for duration calculation
+      if (currentTranscript && !speakingStartRef.current) {
+        speakingStartRef.current = Date.now();
+      }
+      
+      // Update word count live
+      if (currentTranscript) {
+        const words = currentTranscript.trim().split(/\s+/).filter(w => w.length > 0);
+        setWordCount(prev => Math.max(prev, words.length));
+      }
 
       if (finalTranscript && finalTranscript.trim().length > 2) {
+        // Calculate speaking duration when finalizing
+        if (speakingStartRef.current) {
+          const duration = (Date.now() - speakingStartRef.current) / 1000;
+          setSpeakingDuration(prev => prev + duration);
+          speakingStartRef.current = null;
+        }
+        
+        // Count total words
+        const words = finalTranscript.trim().split(/\s+/).filter(w => w.length > 0);
+        setWordCount(prev => prev + words.length);
+        
         handleUserSpeech(finalTranscript);
       }
     };
@@ -335,6 +362,16 @@ export function useVoiceSession(userId: string | undefined) {
     setMessages([]);
     messagesRef.current = [];
     setSessionSeconds(0);
+    setWordCount(0);
+    setSpeakingDuration(0);
+    setLiveScore({
+      fluency: 0,
+      vocabulary: 0,
+      grammar: 0,
+      pronunciation: 0,
+      overall: 0,
+      mistakes: [],
+    });
 
     // Start session timer
     timerRef.current = setInterval(() => {
@@ -443,6 +480,8 @@ export function useVoiceSession(userId: string | undefined) {
     remainingSeconds,
     sessionSeconds,
     liveScore,
+    wordCount,
+    speakingDuration,
     startSession,
     stopSession,
     requestFeedback,

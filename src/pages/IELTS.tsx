@@ -20,10 +20,13 @@ import {
   Loader2,
   Star,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import VoiceWaveform from "@/components/ielts/VoiceWaveform";
+import LiveAnalysisPanel from "@/components/ielts/LiveAnalysisPanel";
 import { cn } from "@/lib/utils";
 
 const ieltsTopics = [
@@ -57,6 +60,8 @@ const IELTS = () => {
     remainingSeconds,
     sessionSeconds,
     liveScore,
+    wordCount,
+    speakingDuration,
     startSession,
     stopSession,
     requestFeedback,
@@ -65,6 +70,7 @@ const IELTS = () => {
   
   const [inputValue, setInputValue] = useState("");
   const [selectedMode, setSelectedMode] = useState<"speaking" | "writing" | "voice" | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -187,83 +193,89 @@ const IELTS = () => {
         )}
 
         {/* Voice Session UI */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col lg:flex-row">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {voiceMessages.length === 0 && !isSessionActive ? (
-              <div className="text-center py-12 space-y-6">
+              <div className="text-center py-12 space-y-6 max-w-md mx-auto">
                 <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shadow-lg animate-pulse">
                   <Headphones className="w-12 h-12 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold mb-2">Real-Time Voice Practice</h2>
-                  <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                    Practice speaking with AI examiner Sarah. 30 minutes free daily!
+                  <p className="text-muted-foreground text-sm">
+                    Practice speaking with AI examiner Sarah. Live scoring & feedback!
                   </p>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                  <div className="p-3 rounded-xl bg-secondary">
-                    <Mic className="w-5 h-5 mx-auto mb-1 text-primary" />
-                    <span>Speak freely</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-secondary">
-                    <Volume2 className="w-5 h-5 mx-auto mb-1 text-primary" />
-                    <span>AI responds</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-secondary">
-                    <Star className="w-5 h-5 mx-auto mb-1 text-primary" />
-                    <span>Get feedback</span>
-                  </div>
                 </div>
               </div>
             ) : (
-              voiceMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
+              <div className="max-w-2xl mx-auto space-y-4">
+                {voiceMessages.map((message) => (
                   <div
+                    key={message.id}
                     className={cn(
-                      "max-w-[80%] p-3 rounded-2xl text-sm",
-                      message.role === "user"
-                        ? "bg-foreground text-background rounded-br-sm"
-                        : "bg-secondary rounded-bl-sm"
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
-                    {message.role === "assistant" && (
-                      <p className="text-xs text-primary font-medium mb-1">Sarah (Examiner)</p>
-                    )}
-                    <p className="leading-relaxed">{message.content}</p>
+                    <div
+                      className={cn(
+                        "max-w-[80%] p-3 rounded-2xl text-sm",
+                        message.role === "user"
+                          ? "bg-foreground text-background rounded-br-sm"
+                          : "bg-secondary rounded-bl-sm"
+                      )}
+                    >
+                      {message.role === "assistant" && (
+                        <p className="text-xs text-rose-500 font-medium mb-1">Sarah (Examiner)</p>
+                      )}
+                      <p className="leading-relaxed">{message.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-            
-            {/* Live transcript */}
-            {transcript && (
-              <div className="flex justify-end">
-                <div className="max-w-[80%] p-3 rounded-2xl bg-foreground/50 text-background rounded-br-sm text-sm italic">
-                  {transcript}...
-                </div>
+                ))}
+                
+                {/* Live transcript with waveform */}
+                {transcript && (
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 rounded-br-sm text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Zap className="w-3 h-3 text-emerald-500" />
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400">Live</span>
+                      </div>
+                      <p className="text-foreground">{transcript}</p>
+                      <VoiceWaveform isActive={true} isListening={isListening} isSpeaking={false} className="mt-2" />
+                    </div>
+                  </div>
+                )}
+
+                {isProcessing && (
+                  <div className="flex justify-start">
+                    <div className="bg-secondary p-3 rounded-2xl rounded-bl-sm">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                        <span className="text-xs text-muted-foreground">Sarah is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-
-            {isProcessing && (
-              <div className="flex justify-start">
-                <div className="bg-secondary p-3 rounded-2xl rounded-bl-sm">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-xs text-muted-foreground">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Live Analysis Panel - Side panel on desktop */}
+          {isSessionActive && showAnalysis && (
+            <div className="lg:w-80 p-4 lg:border-l border-t lg:border-t-0 border-border bg-card/50">
+              <LiveAnalysisPanel
+                liveScore={liveScore}
+                isListening={isListening}
+                transcript={transcript}
+                wordCount={wordCount}
+                speakingDuration={speakingDuration}
+              />
+            </div>
+          )}
+        </div>
 
           {/* Voice Controls */}
           <div className="p-6 border-t border-border bg-card/80 backdrop-blur-lg safe-area-bottom">
