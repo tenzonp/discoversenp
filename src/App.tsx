@@ -11,6 +11,7 @@ import Loksewa from "./pages/Loksewa";
 import IELTS from "./pages/IELTS";
 import Student from "./pages/Student";
 import Profile from "./pages/Profile";
+import ProgressDashboard from "./pages/ProgressDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/ielts" element={<IELTS />} />
             <Route path="/student" element={<Student />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/progress" element={<ProgressDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

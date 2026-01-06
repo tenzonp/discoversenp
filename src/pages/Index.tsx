@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowRight, BookOpen, Languages, GraduationCap, Sparkles, Moon, Sun } from "lucide-react";
+import { MessageCircle, ArrowRight, BookOpen, Languages, GraduationCap, Sparkles, Moon, Sun, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Onboarding, useOnboarding } from "@/components/Onboarding";
@@ -10,6 +10,7 @@ const modes = [
   { icon: BookOpen, title: "Quiz", desc: "Exam prep", route: "/loksewa" },
   { icon: Languages, title: "IELTS", desc: "Speaking", route: "/ielts" },
   { icon: GraduationCap, title: "Student", desc: "Homework", route: "/student" },
+  { icon: Trophy, title: "Progress", desc: "Stats", route: "/progress" },
 ];
 
 const Index = () => {
@@ -81,7 +82,7 @@ const Index = () => {
 
       {/* Modes */}
       <section className="px-6 pb-8">
-        <div className="grid grid-cols-4 gap-2 max-w-sm mx-auto">
+        <div className="grid grid-cols-5 gap-2 max-w-md mx-auto">
           {modes.map((mode, index) => (
             <button
               key={mode.title}

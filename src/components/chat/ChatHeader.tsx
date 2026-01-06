@@ -1,11 +1,13 @@
-import { ArrowLeft, MoreVertical, Trash2, History } from "lucide-react";
+import { ArrowLeft, MoreVertical, Trash2, History, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface ChatHeaderProps {
   onBack: () => void;
@@ -14,6 +16,8 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
+  const { isEnabled, isSupported, toggleEnabled } = useTextToSpeech();
+
   return (
     <header className="sticky top-0 z-50 px-3 py-3 border-b border-border bg-background/80 backdrop-blur-xl safe-area-top">
       <div className="flex items-center gap-3 max-w-2xl mx-auto">
@@ -39,6 +43,18 @@ const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
           </div>
         </div>
 
+        {isSupported && (
+          <Button
+            variant={isEnabled ? "default" : "ghost"}
+            size="icon"
+            onClick={toggleEnabled}
+            className="h-9 w-9 rounded-full"
+            title={isEnabled ? "Turn off voice" : "Turn on voice"}
+          >
+            {isEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </Button>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
@@ -52,6 +68,16 @@ const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
                 History
               </DropdownMenuItem>
             )}
+            {isSupported && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={toggleEnabled}>
+                  {isEnabled ? <VolumeX className="w-4 h-4 mr-2" /> : <Volume2 className="w-4 h-4 mr-2" />}
+                  {isEnabled ? "Disable Voice" : "Enable Voice"}
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onClear} className="text-destructive focus:text-destructive">
               <Trash2 className="w-4 h-4 mr-2" />
               Clear

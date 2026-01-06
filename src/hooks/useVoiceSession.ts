@@ -23,8 +23,28 @@ export function useVoiceSession(userId: string | undefined) {
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const messagesRef = useRef<VoiceMessage[]>([]);
+  const isSessionActiveRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const { toast } = useToast();
+
+  // Keep refs in sync
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    isSessionActiveRef.current = isSessionActive;
+  }, [isSessionActive]);
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
+  useEffect(() => {
+    isProcessingRef.current = isProcessing;
+  }, [isProcessing]);
 
   // Check daily usage
   const checkDailyUsage = useCallback(async () => {
@@ -47,7 +67,7 @@ export function useVoiceSession(userId: string | undefined) {
 
   // Update usage in database
   const updateUsage = useCallback(async (seconds: number) => {
-    if (!userId) return;
+    if (!userId || seconds <= 0) return;
 
     const today = new Date().toISOString().split("T")[0];
     const { data: existing } = await supabase
@@ -69,11 +89,143 @@ export function useVoiceSession(userId: string | undefined) {
     }
   }, [userId]);
 
+  // Text to speech
+  const speakText = useCallback((text: string, onComplete?: () => void) => {
+    if (!("speechSynthesis" in window)) {
+      onComplete?.();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+
+    // Try to use a good voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => 
+      v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("female") || v.name.includes("Google")
+    );
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      isSpeakingRef.current = true;
+      // Stop listening while speaking
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      isSpeakingRef.current = false;
+      onComplete?.();
+      // Resume listening
+      if (isSessionActiveRef.current && recognitionRef.current) {
+        setTimeout(() => {
+          try {
+            recognitionRef.current.start();
+            setIsListening(true);
+          } catch (e) {
+            console.log("Couldn't restart recognition:", e);
+          }
+        }, 300);
+      }
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      isSpeakingRef.current = false;
+      onComplete?.();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  // Get AI response
+  const getAIResponse = useCallback(async (allMessages: VoiceMessage[]) => {
+    try {
+      const messagesToSend = allMessages.map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ielts-voice-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ action: "chat", messages: messagesToSend }),
+        }
+      );
+
+      const data = await response.json();
+      return data.response || null;
+    } catch (error) {
+      console.error("AI response error:", error);
+      return null;
+    }
+  }, []);
+
+  // Handle user speech - uses refs to avoid stale closures
+  const handleUserSpeech = useCallback(async (text: string) => {
+    if (!text.trim() || isProcessingRef.current) return;
+
+    const userMessage: VoiceMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: text.trim(),
+      timestamp: new Date(),
+    };
+
+    const updatedMessages = [...messagesRef.current, userMessage];
+    setMessages(updatedMessages);
+    messagesRef.current = updatedMessages;
+    setTranscript("");
+    setIsProcessing(true);
+    isProcessingRef.current = true;
+
+    try {
+      const aiText = await getAIResponse(updatedMessages);
+      
+      if (aiText) {
+        const assistantMessage: VoiceMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: aiText,
+          timestamp: new Date(),
+        };
+        const newMessages = [...updatedMessages, assistantMessage];
+        setMessages(newMessages);
+        messagesRef.current = newMessages;
+        
+        // Speak the response
+        speakText(aiText, () => {
+          setIsProcessing(false);
+          isProcessingRef.current = false;
+        });
+      } else {
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+      }
+    } catch (error) {
+      console.error("Speech handling error:", error);
+      setIsProcessing(false);
+      isProcessingRef.current = false;
+    }
+  }, [getAIResponse, speakText]);
+
   // Initialize speech recognition
   const initSpeechRecognition = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast({ title: "Voice not supported", description: "Your browser doesn't support voice input", variant: "destructive" });
+      toast({ title: "Voice not supported", description: "Use Chrome or Edge for voice", variant: "destructive" });
       return null;
     }
 
@@ -97,133 +249,50 @@ export function useVoiceSession(userId: string | undefined) {
 
       setTranscript(interimTranscript || finalTranscript);
 
-      if (finalTranscript) {
+      if (finalTranscript && finalTranscript.trim().length > 2) {
         handleUserSpeech(finalTranscript);
       }
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
-      if (event.error !== "no-speech") {
-        setIsListening(false);
+      console.log("Speech recognition error:", event.error);
+      if (event.error === "not-allowed") {
+        toast({ title: "Microphone access denied", description: "Please allow microphone access", variant: "destructive" });
+        setIsSessionActive(false);
+        isSessionActiveRef.current = false;
       }
     };
 
     recognition.onend = () => {
-      if (isSessionActive && !isSpeaking) {
-        try {
-          recognition.start();
-        } catch (e) {
-          // Ignore if already started
-        }
+      // Auto-restart if session is active and not speaking
+      if (isSessionActiveRef.current && !isSpeakingRef.current && !isProcessingRef.current) {
+        setTimeout(() => {
+          try {
+            recognition.start();
+          } catch (e) {}
+        }, 100);
       }
     };
 
     return recognition;
-  }, [isSessionActive, isSpeaking, toast]);
-
-  // Handle user's spoken text
-  const handleUserSpeech = useCallback(async (text: string) => {
-    if (!text.trim() || isProcessing) return;
-
-    const userMessage: VoiceMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setTranscript("");
-    setIsProcessing(true);
-
-    try {
-      const allMessages = [...messages, userMessage].map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ielts-voice-session`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ action: "chat", messages: allMessages }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.response) {
-        const assistantMessage: VoiceMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: data.response,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        speakText(data.response);
-      }
-    } catch (error) {
-      console.error("Chat error:", error);
-      toast({ title: "Error", description: "Couldn't get AI response", variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [messages, isProcessing, toast]);
-
-  // Text to speech
-  const speakText = useCallback((text: string) => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 0.95;
-      utterance.pitch = 1;
-
-      // Try to use a female voice
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v => 
-        v.name.includes("female") || v.name.includes("Samantha") || v.name.includes("Karen")
-      );
-      if (femaleVoice) utterance.voice = femaleVoice;
-
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        if (recognitionRef.current) {
-          try {
-            recognitionRef.current.stop();
-          } catch (e) {}
-        }
-      };
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        if (isSessionActive && recognitionRef.current) {
-          try {
-            recognitionRef.current.start();
-            setIsListening(true);
-          } catch (e) {}
-        }
-      };
-
-      speechSynthRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [isSessionActive]);
+  }, [handleUserSpeech, toast]);
 
   // Start session
   const startSession = useCallback(async () => {
     if (remainingSeconds <= 0) {
       toast({ 
-        title: "Daily limit reached! 🕐", 
-        description: "You've used 30 mins today. Bholi feri practice gara!", 
+        title: "Daily limit pugyo! 🕐", 
+        description: "30 min bhayo aaja. Bholi feri practice gara!", 
         variant: "destructive" 
       });
+      return;
+    }
+
+    // Request mic permission first
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      toast({ title: "Microphone access needed", description: "Please allow microphone to use voice practice", variant: "destructive" });
       return;
     }
 
@@ -232,7 +301,9 @@ export function useVoiceSession(userId: string | undefined) {
 
     recognitionRef.current = recognition;
     setIsSessionActive(true);
+    isSessionActiveRef.current = true;
     setMessages([]);
+    messagesRef.current = [];
     setSessionSeconds(0);
 
     // Start session timer
@@ -240,17 +311,12 @@ export function useVoiceSession(userId: string | undefined) {
       setSessionSeconds(prev => {
         const newSeconds = prev + 1;
         setRemainingSeconds(r => Math.max(0, r - 1));
-        
-        if (newSeconds >= remainingSeconds) {
-          stopSession();
-          toast({ title: "Time's up! ⏰", description: "Daily free limit pugyo. Bholi feri aija!" });
-        }
         return newSeconds;
       });
     }, 1000);
 
-    // Add initial AI greeting
-    const greeting = "Hello! I'm Sarah, your IELTS Speaking examiner. Welcome to your practice session. Would you like to practice Part 1 familiar topics, Part 2 long turn, or Part 3 discussion? Just speak your choice!";
+    // Initial greeting
+    const greeting = "Hello! I'm Sarah, your IELTS Speaking examiner. Welcome to your practice session! Which part would you like to practice - Part 1 about familiar topics, Part 2 with a cue card, or Part 3 for abstract discussion? Just tell me!";
     
     const assistantMessage: VoiceMessage = {
       id: crypto.randomUUID(),
@@ -259,24 +325,31 @@ export function useVoiceSession(userId: string | undefined) {
       timestamp: new Date(),
     };
     setMessages([assistantMessage]);
+    messagesRef.current = [assistantMessage];
 
-    // Wait a moment then speak and start listening
+    // Speak greeting then start listening
     setTimeout(() => {
-      speakText(greeting);
+      speakText(greeting, () => {
+        try {
+          recognition.start();
+          setIsListening(true);
+        } catch (e) {
+          console.log("Couldn't start recognition:", e);
+        }
+      });
     }, 500);
   }, [remainingSeconds, initSpeechRecognition, speakText, toast]);
 
   // Stop session
   const stopSession = useCallback(() => {
     setIsSessionActive(false);
+    isSessionActiveRef.current = false;
     setIsListening(false);
     setIsSpeaking(false);
     setTranscript("");
 
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
+      try { recognitionRef.current.stop(); } catch (e) {}
       recognitionRef.current = null;
     }
 
@@ -297,7 +370,7 @@ export function useVoiceSession(userId: string | undefined) {
 
   // Request feedback
   const requestFeedback = useCallback(() => {
-    handleUserSpeech("Can you give me feedback on my speaking? What's my estimated band score and how can I improve?");
+    handleUserSpeech("Can you give me detailed feedback on my speaking? What's my estimated band score and what specific areas should I improve?");
   }, [handleUserSpeech]);
 
   // Check usage on mount
@@ -305,20 +378,23 @@ export function useVoiceSession(userId: string | undefined) {
     checkDailyUsage();
   }, [checkDailyUsage]);
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (timerRef.current) clearInterval(timerRef.current);
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    };
-  }, []);
-
   // Load voices
   useEffect(() => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
     }
+  }, []);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) try { recognitionRef.current.stop(); } catch (e) {}
+      if (timerRef.current) clearInterval(timerRef.current);
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
   }, []);
 
   const formatTime = (seconds: number) => {
