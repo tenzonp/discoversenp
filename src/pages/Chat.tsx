@@ -41,9 +41,9 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleSend = (content: string, imageUrl?: string) => {
+  const handleSend = (content: string, imageUrl?: string, generateImagePrompt?: string) => {
     if (isLimitReached) return;
-    sendMessage(content, imageUrl);
+    sendMessage(content, imageUrl, generateImagePrompt);
   };
 
   if (loading) {

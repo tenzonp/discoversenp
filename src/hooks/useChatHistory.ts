@@ -118,7 +118,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
   }, [loadConversations]);
 
   // Send message with streaming
-  const sendMessage = useCallback(async (content: string, imageUrl?: string) => {
+  const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string) => {
     if ((!content.trim() && !imageUrl) || isLoading || !userId) return;
 
     let convId = currentConversationId;
@@ -145,6 +145,46 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
 
     setMessages((prev) => [...prev, userMessage]);
     await saveMessage(convId, "user", messageContent);
+
+    // If there's an image generation prompt, generate image and add as assistant message
+    if (generateImagePrompt) {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ prompt: generateImagePrompt }),
+          }
+        );
+        
+        const data = await response.json();
+        if (data.imageUrl) {
+          const assistantImageMessage: Message = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: `Here's your image! 🎨`,
+            imageUrl: data.imageUrl,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, assistantImageMessage]);
+          await saveMessage(convId, "assistant", `[Generated Image: ${data.imageUrl}]\n\nHere's your image! 🎨`);
+          return; // Don't continue with normal chat flow
+        }
+      } catch (error) {
+        console.error("Image generation error:", error);
+        toast({
+          variant: "destructive",
+          title: "Image Error",
+          description: "Image generate garna sakiena 😔",
+        });
+      }
+      return;
+    }
+
     setIsLoading(true);
 
     let assistantContent = "";
