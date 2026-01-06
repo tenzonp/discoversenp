@@ -112,6 +112,19 @@ CREATE TABLE public.flashcards (
 
 
 --
+-- Name: image_generation_usage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.image_generation_usage (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    generated_at timestamp with time zone DEFAULT now() NOT NULL,
+    prompt text,
+    image_url text
+);
+
+
+--
 -- Name: messages; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -222,6 +235,14 @@ ALTER TABLE ONLY public.flashcards
 
 
 --
+-- Name: image_generation_usage image_generation_usage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.image_generation_usage
+    ADD CONSTRAINT image_generation_usage_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -307,6 +328,13 @@ ALTER TABLE ONLY public.user_streaks
 
 ALTER TABLE ONLY public.user_xp
     ADD CONSTRAINT user_xp_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_image_generation_user_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_image_generation_user_date ON public.image_generation_usage USING btree (user_id, generated_at DESC);
 
 
 --
@@ -451,6 +479,13 @@ CREATE POLICY "Users can insert messages to their conversations" ON public.messa
 
 
 --
+-- Name: image_generation_usage Users can insert own image usage; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can insert own image usage" ON public.image_generation_usage FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
 -- Name: flashcards Users can insert their own flashcards; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -551,6 +586,13 @@ CREATE POLICY "Users can view messages from their conversations" ON public.messa
 
 
 --
+-- Name: image_generation_usage Users can view own image usage; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can view own image usage" ON public.image_generation_usage FOR SELECT USING ((auth.uid() = user_id));
+
+
+--
 -- Name: conversations Users can view their own conversations; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -595,6 +637,12 @@ ALTER TABLE public.flashcard_progress ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.flashcards ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: image_generation_usage; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.image_generation_usage ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: messages; Type: ROW SECURITY; Schema: public; Owner: -
