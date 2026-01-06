@@ -211,6 +211,20 @@ CREATE TABLE public.user_xp (
 
 
 --
+-- Name: voice_session_usage; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.voice_session_usage (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    session_date date DEFAULT CURRENT_DATE NOT NULL,
+    total_seconds integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: conversations conversations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -331,6 +345,22 @@ ALTER TABLE ONLY public.user_xp
 
 
 --
+-- Name: voice_session_usage voice_session_usage_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.voice_session_usage
+    ADD CONSTRAINT voice_session_usage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: voice_session_usage voice_session_usage_user_id_session_date_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.voice_session_usage
+    ADD CONSTRAINT voice_session_usage_user_id_session_date_key UNIQUE (user_id, session_date);
+
+
+--
 -- Name: idx_image_generation_user_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -377,6 +407,13 @@ CREATE TRIGGER update_user_streaks_updated_at BEFORE UPDATE ON public.user_strea
 --
 
 CREATE TRIGGER update_user_xp_updated_at BEFORE UPDATE ON public.user_xp FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: voice_session_usage update_voice_session_usage_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_voice_session_usage_updated_at BEFORE UPDATE ON public.voice_session_usage FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
@@ -521,6 +558,13 @@ CREATE POLICY "Users can insert their own streaks" ON public.user_streaks FOR IN
 
 
 --
+-- Name: voice_session_usage Users can insert their own usage; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can insert their own usage" ON public.voice_session_usage FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
 -- Name: user_xp Users can insert their own xp; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -567,6 +611,13 @@ CREATE POLICY "Users can update their own progress" ON public.flashcard_progress
 --
 
 CREATE POLICY "Users can update their own streaks" ON public.user_streaks FOR UPDATE USING ((auth.uid() = user_id));
+
+
+--
+-- Name: voice_session_usage Users can update their own usage; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can update their own usage" ON public.voice_session_usage FOR UPDATE USING ((auth.uid() = user_id));
 
 
 --
@@ -618,6 +669,13 @@ CREATE POLICY "Users can view their own progress" ON public.flashcard_progress F
 --
 
 CREATE POLICY "Users can view their own quiz scores" ON public.quiz_scores FOR SELECT USING ((auth.uid() = user_id));
+
+
+--
+-- Name: voice_session_usage Users can view their own usage; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can view their own usage" ON public.voice_session_usage FOR SELECT USING ((auth.uid() = user_id));
 
 
 --
@@ -679,6 +737,12 @@ ALTER TABLE public.user_streaks ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.user_xp ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: voice_session_usage; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.voice_session_usage ENABLE ROW LEVEL SECURITY;
 
 --
 -- PostgreSQL database dump complete
