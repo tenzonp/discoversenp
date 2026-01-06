@@ -11,6 +11,15 @@ interface VoiceMessage {
   timestamp: Date;
 }
 
+interface LiveScore {
+  fluency: number;
+  vocabulary: number;
+  grammar: number;
+  pronunciation: number;
+  overall: number;
+  mistakes: string[];
+}
+
 export function useVoiceSession(userId: string | undefined) {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -20,6 +29,14 @@ export function useVoiceSession(userId: string | undefined) {
   const [transcript, setTranscript] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState(MAX_FREE_SECONDS);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [liveScore, setLiveScore] = useState<LiveScore>({
+    fluency: 0,
+    vocabulary: 0,
+    grammar: 0,
+    pronunciation: 0,
+    overall: 0,
+    mistakes: [],
+  });
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -145,7 +162,7 @@ export function useVoiceSession(userId: string | undefined) {
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  // Get AI response
+  // Get AI response with scoring
   const getAIResponse = useCallback(async (allMessages: VoiceMessage[]) => {
     try {
       const messagesToSend = allMessages.map(m => ({
@@ -166,6 +183,19 @@ export function useVoiceSession(userId: string | undefined) {
       );
 
       const data = await response.json();
+      
+      // Update live scores if provided
+      if (data.scores) {
+        setLiveScore(prev => ({
+          fluency: data.scores.fluency ?? prev.fluency,
+          vocabulary: data.scores.vocabulary ?? prev.vocabulary,
+          grammar: data.scores.grammar ?? prev.grammar,
+          pronunciation: data.scores.pronunciation ?? prev.pronunciation,
+          overall: data.scores.overall ?? prev.overall,
+          mistakes: data.scores.mistakes ?? prev.mistakes,
+        }));
+      }
+      
       return data.response || null;
     } catch (error) {
       console.error("AI response error:", error);
@@ -412,6 +442,7 @@ export function useVoiceSession(userId: string | undefined) {
     transcript,
     remainingSeconds,
     sessionSeconds,
+    liveScore,
     startSession,
     stopSession,
     requestFeedback,

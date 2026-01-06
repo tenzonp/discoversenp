@@ -82,7 +82,7 @@ const Auth = () => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-hero flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
             <MessageCircle className="w-4 h-4 text-white" />
           </div>
           <span className="font-semibold">Bhote AI</span>
@@ -94,7 +94,7 @@ const Auth = () => {
         <div className="w-full max-w-sm space-y-6">
           {/* Logo & Title */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-hero flex items-center justify-center shadow-glow">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary flex items-center justify-center shadow-soft">
               <MessageCircle className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold">
@@ -179,7 +179,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 rounded-xl bg-gradient-hero text-white font-semibold"
+              className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -18,7 +18,9 @@ import {
   Clock,
   Volume2,
   Loader2,
-  Star
+  Star,
+  TrendingUp,
+  AlertCircle
 } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -54,6 +56,7 @@ const IELTS = () => {
     transcript,
     remainingSeconds,
     sessionSeconds,
+    liveScore,
     startSession,
     stopSession,
     requestFeedback,
@@ -134,12 +137,54 @@ const IELTS = () => {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {isSessionActive && liveScore.overall > 0 && (
+              <div className="flex items-center gap-1 text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3" />
+                <span>{Math.round(liveScore.overall)}/100</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
               <Clock className="w-3 h-3" />
               <span>{formatTime(remainingSeconds)} left today</span>
             </div>
           </div>
         </header>
+
+        {/* Live Score Panel - shows when session active */}
+        {isSessionActive && liveScore.overall > 0 && (
+          <div className="px-4 py-3 bg-secondary/50 border-b border-border/50">
+            <div className="max-w-2xl mx-auto">
+              <div className="grid grid-cols-4 gap-2 text-center text-xs mb-2">
+                <div className="p-2 rounded-lg bg-background">
+                  <div className="font-semibold text-foreground">{Math.round(liveScore.fluency)}</div>
+                  <div className="text-muted-foreground">Fluency</div>
+                </div>
+                <div className="p-2 rounded-lg bg-background">
+                  <div className="font-semibold text-foreground">{Math.round(liveScore.vocabulary)}</div>
+                  <div className="text-muted-foreground">Vocab</div>
+                </div>
+                <div className="p-2 rounded-lg bg-background">
+                  <div className="font-semibold text-foreground">{Math.round(liveScore.grammar)}</div>
+                  <div className="text-muted-foreground">Grammar</div>
+                </div>
+                <div className="p-2 rounded-lg bg-background">
+                  <div className="font-semibold text-foreground">{Math.round(liveScore.pronunciation)}</div>
+                  <div className="text-muted-foreground">Pronun.</div>
+                </div>
+              </div>
+              {liveScore.mistakes.length > 0 && (
+                <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2 rounded-lg">
+                  <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-0.5">
+                    {liveScore.mistakes.slice(0, 2).map((mistake, i) => (
+                      <p key={i}>{mistake}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Voice Session UI */}
         <div className="flex-1 flex flex-col">
