@@ -277,78 +277,77 @@ const IELTS = () => {
           )}
         </div>
 
-          {/* Voice Controls */}
-          <div className="p-6 border-t border-border bg-card/80 backdrop-blur-lg safe-area-bottom">
-            <div className="max-w-md mx-auto space-y-4">
-              {isSessionActive && (
-                <div className="flex items-center justify-center gap-4 text-sm">
-                  {isSpeaking && (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                      <Volume2 className="w-4 h-4" />
-                      <span>Sarah is speaking...</span>
-                    </div>
-                  )}
-                  {isListening && !isSpeaking && (
-                    <div className="flex items-center gap-2 text-emerald-500">
-                      <Mic className="w-4 h-4 animate-pulse" />
-                      <span>Listening to you...</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center justify-center gap-4">
-                {!isSessionActive ? (
-                  <Button
-                    size="lg"
-                    onClick={startSession}
-                    disabled={remainingSeconds <= 0}
-                    className="h-16 px-8 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white shadow-lg"
-                  >
-                    <Phone className="w-5 h-5 mr-2" />
-                    Start Voice Session
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={requestFeedback}
-                      className="h-12 w-12 rounded-full"
-                      title="Get feedback"
-                    >
-                      <Star className="w-5 h-5" />
-                    </Button>
-
-                    <Button
-                      size="lg"
-                      onClick={stopSession}
-                      className="h-16 px-8 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg"
-                    >
-                      <PhoneOff className="w-5 h-5 mr-2" />
-                      End Session
-                    </Button>
-
-                    <div className={cn(
-                      "h-12 w-12 rounded-full flex items-center justify-center",
-                      isListening ? "bg-emerald-500 animate-pulse" : "bg-secondary"
-                    )}>
-                      {isListening ? (
-                        <Mic className="w-5 h-5 text-white" />
-                      ) : (
-                        <MicOff className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                  </>
+        {/* Voice Controls */}
+        <div className="p-6 border-t border-border bg-card/80 backdrop-blur-lg safe-area-bottom">
+          <div className="max-w-md mx-auto space-y-4">
+            {isSessionActive && (
+              <div className="flex items-center justify-center gap-4 text-sm">
+                {isSpeaking && (
+                  <div className="flex items-center gap-2 text-primary animate-pulse">
+                    <Volume2 className="w-4 h-4" />
+                    <span>Sarah is speaking...</span>
+                  </div>
+                )}
+                {isListening && !isSpeaking && (
+                  <div className="flex items-center gap-2 text-emerald-500">
+                    <Mic className="w-4 h-4 animate-pulse" />
+                    <span>Listening to you...</span>
+                  </div>
                 )}
               </div>
+            )}
 
-              {remainingSeconds <= 0 && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Daily limit reached! Come back tomorrow for more practice 🌙
-                </p>
+            <div className="flex items-center justify-center gap-4">
+              {!isSessionActive ? (
+                <Button
+                  size="lg"
+                  onClick={startSession}
+                  disabled={remainingSeconds <= 0}
+                  className="h-16 px-8 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white shadow-lg"
+                >
+                  <Phone className="w-5 h-5 mr-2" />
+                  Start Voice Session
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={requestFeedback}
+                    className="h-12 w-12 rounded-full"
+                    title="Get feedback"
+                  >
+                    <Star className="w-5 h-5" />
+                  </Button>
+
+                  <Button
+                    size="lg"
+                    onClick={stopSession}
+                    className="h-16 px-8 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg"
+                  >
+                    <PhoneOff className="w-5 h-5 mr-2" />
+                    End Session
+                  </Button>
+
+                  <div className={cn(
+                    "h-12 w-12 rounded-full flex items-center justify-center",
+                    isListening ? "bg-emerald-500 animate-pulse" : "bg-secondary"
+                  )}>
+                    {isListening ? (
+                      <Mic className="w-5 h-5 text-white" />
+                    ) : (
+                      <MicOff className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </>
               )}
             </div>
+
+            {remainingSeconds <= 0 && (
+              <p className="text-center text-sm text-muted-foreground">
+                Daily limit reached! Come back tomorrow for more practice 🌙
+              </p>
+            )}
           </div>
         </div>
       </div>
