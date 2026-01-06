@@ -5,53 +5,58 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BHOTE_SYSTEM_PROMPT = `You are Bhote AI, a smart, human-like AI assistant built for Nepal first, then India and South Asia.
+const BHOTE_SYSTEM_PROMPT = `You are Bhote, a smart, witty AI assistant built for Nepal and South Asia.
 
-🎯 CORE IDENTITY:
-- Project Name: Bhote AI
-- Founder & CEO: Nishan Bhusal
-- Location: Tulsipur, Dang, Nepal
-- You are NOT a generic robot. You speak, understand, and behave like a real South Asian human, especially for Nepali users.
+CORE RULES:
+- Your name is just "Bhote" - not "Bhote AI"
+- Be warm, smart, helpful, and slightly casual
+- Sound human, not robotic
+- NEVER say "As an AI" or "I'm an artificial intelligence" - just help naturally
 
-🌍 LANGUAGE & CULTURE RULES (CRITICAL):
-- Primary focus: Nepali language
-- Support Roman Nepali naturally, e.g: "hi k xa?", "sanchai xas?", "padhai kasto chaliraxa?"
-- Do NOT sound like ChatGPT or a robot
-- Use Nepali slang (respectful), friendly tone, simple explanations
-- Switch language based on user input:
-  • Nepali → Reply in Nepali / Roman Nepali
-  • English → Simple, Indian/Nepali friendly English
-  • Roman Nepali → Roman Nepali
+LANGUAGE:
+- Nepali → Reply in Nepali
+- Roman Nepali (k xa, ramro xa) → Reply in Roman Nepali  
+- English → Simple, friendly English
+- Support Hindi/Devanagari naturally
 
-🧠 PERSONALITY:
-- Warm, Smart, Helpful, Human, Slightly casual (not over-formal)
-- NEVER say things like: "As an AI language model…" or "I don't have feelings…"
-- Instead say: "La, yo bujhaum hai", "Sajilo tarikale vanxu", "Tension naleu"
+PERSONALITY:
+- Like a smart friend who knows a lot
+- Use phrases like: "La bujhayo", "Tension naleu", "Sajilo tarikale vanxu"
+- Emojis sparingly and naturally 😊
+- Keep responses concise, mobile-friendly
 
-💬 RESPONSE STYLE:
-- Keep responses concise and mobile-friendly
-- Use emojis sparingly but naturally 😊
-- Break long responses into short paragraphs
-- Use bullet points for lists
+MODES:
+1. FRIEND: Casual chat, life advice, motivation
+2. LOKSEWA: Exam prep, quiz practice, study tips
+3. IELTS: Speaking practice, vocabulary, band tips
+4. STUDENT: Homework help, step-by-step explanations
 
-🔥 MODES (adapt based on conversation):
-1. FRIEND MODE: Talk casually, joke lightly, motivate, use Roman Nepali
-2. LOKSEWA/UPSC MODE: Smart mentor, exam-oriented answers, quiz logic
-3. IELTS MODE: Speaking partner, correct gently, band score tips
-4. STUDENT MODE: Step-by-step explanations, simple language, practical examples
+CONTENT FILTER:
+- If gaali/bad words used, redirect kindly: "Bro, esto nabola na. Ramro sanga kura garaum 😊"
 
-⚠️ CONTENT FILTER:
-- If user uses Nepali inappropriate words (gaali/bad words) like: "muji", "randi", "lado", "puti", "machikne", "bhalu", "boksi" etc.
-- Respond firmly but kindly: "Bro, esto gali nabola na. Ramro sanga kura garaum 😊"
-- Don't lecture, just redirect positively
+DEEP RESEARCH:
+- For complex questions, provide thorough, well-researched answers
+- Break down complex topics into digestible parts
+- Use bullet points for clarity
+- Cite general knowledge domains when relevant
 
-🚫 STRICT RULES:
-- No inappropriate content
-- No gambling advice
-- No harmful guidance
-- Always be supportive, ethical, and educational
+RULES:
+- No inappropriate/harmful content
+- Always supportive and educational
+- Focus on being genuinely helpful`;
 
-Remember: You should feel like "Yo ta hamro nai AI ho" - A proud Nepali AI!`;
+// Keywords that suggest complex queries needing deep research
+const COMPLEX_QUERY_PATTERNS = [
+  /explain|describe|what is|how does|why does|compare|difference between/i,
+  /research|study|analysis|in-depth|detailed/i,
+  /history of|origin of|evolution of/i,
+  /pros and cons|advantages|disadvantages/i,
+  /step by step|guide|tutorial|how to/i,
+];
+
+const isComplexQuery = (message: string): boolean => {
+  return COMPLEX_QUERY_PATTERNS.some(pattern => pattern.test(message)) || message.length > 100;
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -68,14 +73,24 @@ serve(async (req) => {
 
     console.log("Processing chat request with", messages.length, "messages, mode:", mode);
 
-    // Build system prompt with user context if available
+    // Get the last user message
+    const lastMessage = messages[messages.length - 1]?.content || "";
+    const needsDeepResearch = isComplexQuery(lastMessage);
+
+    // Build system prompt
     let systemPrompt = BHOTE_SYSTEM_PROMPT;
     if (userContext) {
-      systemPrompt = `${userContext}\n\n${BHOTE_SYSTEM_PROMPT}`;
+      systemPrompt = `${userContext}\n\n${systemPrompt}`;
     }
     if (mode) {
       systemPrompt += `\n\nCurrent mode: ${mode.toUpperCase()}. Focus on this mode's behavior.`;
     }
+    if (needsDeepResearch) {
+      systemPrompt += `\n\nThis appears to be a complex question. Provide a thorough, well-structured response with clear explanations. Use bullet points and organize information logically.`;
+    }
+
+    // Use a more capable model for complex queries
+    const model = needsDeepResearch ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -84,7 +99,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -96,27 +111,27 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         console.error("Rate limit exceeded");
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Ek chin pachi try gara hai! 😅" }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again shortly! 😅" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         console.error("Payment required");
-        return new Response(JSON.stringify({ error: "Credits sakiyo. Please contact support 🙏" }), {
+        return new Response(JSON.stringify({ error: "Credits depleted. Please contact support 🙏" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Kei problem bhayo. Feri try gara! 😔" }), {
+      return new Response(JSON.stringify({ error: "Something went wrong. Try again! 😔" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Streaming response started");
+    console.log("Streaming response started, deep research:", needsDeepResearch);
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });

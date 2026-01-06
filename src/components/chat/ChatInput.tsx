@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, MicOff, Image, X, Loader2 } from "lucide-react";
+import { Send, Mic, MicOff, Image, X, Loader2, Sparkles, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useImageGeneration } from "@/hooks/useImageGeneration";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 
 interface ChatInputProps {
   onSend: (message: string, imageUrl?: string) => void;
@@ -17,16 +24,18 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("ne-NP");
+  const [showImageGen, setShowImageGen] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { isGenerating, remaining, generateImage, checkRemaining } = useImageGeneration();
 
   const { 
     isListening, 
     transcript, 
     isSupported: voiceSupported, 
     toggleListening,
-    setTranscript 
   } = useVoiceInput({
     language: voiceLang,
     onResult: (result) => {
@@ -45,12 +54,9 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   });
 
-  // Update input with transcript while listening
   useEffect(() => {
-    if (isListening && transcript) {
-      // Show interim results in real-time
-    }
-  }, [transcript, isListening]);
+    checkRemaining();
+  }, [checkRemaining]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -95,19 +101,28 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
     setIsUploading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Login Required",
+          description: "Please login to upload images",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       const fileExt = selectedImage.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `chat/${fileName}`;
+      const fileName = `${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("homework-images")
-        .upload(filePath, selectedImage);
+        .from("chat-images")
+        .upload(fileName, selectedImage);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("homework-images")
-        .getPublicUrl(filePath);
+        .from("chat-images")
+        .getPublicUrl(fileName);
 
       return publicUrl;
     } catch (error) {
@@ -123,6 +138,18 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   };
 
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) return;
+    
+    const imageUrl = await generateImage(imagePrompt);
+    if (imageUrl) {
+      // Send the generated image in chat
+      onSend(`Generated image: "${imagePrompt}"`, imageUrl);
+      setImagePrompt("");
+      setShowImageGen(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if ((!input.trim() && !selectedImage) || isLoading || isUploading) return;
 
@@ -132,6 +159,8 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
       const url = await uploadImage();
       if (url) {
         imageUrl = url;
+      } else if (selectedImage) {
+        return; // Upload failed, don't send
       }
     }
 
@@ -186,21 +215,78 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           size="icon"
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading || isUploading}
-          className="h-11 w-11 flex-shrink-0 rounded-full"
+          className="h-10 w-10 flex-shrink-0 rounded-full"
         >
           <Image className="w-5 h-5 text-muted-foreground" />
         </Button>
 
+        {/* Image Generation Button */}
+        <Popover open={showImageGen} onOpenChange={setShowImageGen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isLoading || isGenerating}
+              className="h-10 w-10 flex-shrink-0 rounded-full relative"
+            >
+              <ImagePlus className="w-5 h-5 text-muted-foreground" />
+              {remaining !== null && remaining > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold">
+                  {remaining}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="start">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h4 className="font-medium text-sm">Generate Image</h4>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {remaining !== null ? `${remaining}/5 left` : ""}
+                </span>
+              </div>
+              <Input
+                placeholder="Describe the image you want..."
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleGenerateImage()}
+                disabled={isGenerating || remaining === 0}
+              />
+              <Button 
+                onClick={handleGenerateImage} 
+                disabled={!imagePrompt.trim() || isGenerating || remaining === 0}
+                className="w-full"
+                size="sm"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : remaining === 0 ? (
+                  "Limit reached (try tomorrow)"
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
         {/* Voice Input Button */}
         {voiceSupported && (
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-0.5">
             <Button
               variant={isListening ? "default" : "ghost"}
               size="icon"
               onClick={toggleListening}
               disabled={isLoading}
               className={cn(
-                "h-11 w-11 flex-shrink-0 rounded-full transition-all",
+                "h-10 w-10 flex-shrink-0 rounded-full transition-all",
                 isListening && "bg-red-500 hover:bg-red-600 animate-pulse"
               )}
             >
@@ -225,7 +311,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "बोल्नुहोस्... Listening..." : "Message Bhote... (Nepali, English, Roman)"}
+            placeholder={isListening ? "Listening..." : "Message Bhote..."}
             rows={1}
             className={cn(
               "w-full px-4 py-3 pr-12 rounded-2xl bg-muted border-0",
@@ -249,7 +335,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           onClick={handleSubmit}
           disabled={(!input.trim() && !selectedImage) || isLoading || isUploading}
           className={cn(
-            "h-11 w-11 flex-shrink-0 transition-all duration-300",
+            "h-10 w-10 flex-shrink-0 transition-all duration-300",
             (input.trim() || selectedImage) && !isLoading ? "scale-100 opacity-100" : "scale-95 opacity-70"
           )}
         >
