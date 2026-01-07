@@ -492,6 +492,45 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_sessions: {
+        Row: {
+          ai_feedback: string | null
+          band_score_estimate: number | null
+          created_at: string
+          duration_seconds: number
+          emotion_summary: Json | null
+          id: string
+          messages: Json
+          session_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_feedback?: string | null
+          band_score_estimate?: number | null
+          created_at?: string
+          duration_seconds?: number
+          emotion_summary?: Json | null
+          id?: string
+          messages?: Json
+          session_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_feedback?: string | null
+          band_score_estimate?: number | null
+          created_at?: string
+          duration_seconds?: number
+          emotion_summary?: Json | null
+          id?: string
+          messages?: Json
+          session_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

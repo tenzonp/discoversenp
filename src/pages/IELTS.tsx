@@ -21,12 +21,13 @@ import {
   Star,
   Zap,
   Wifi,
-  WifiOff
+  History
 } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import VoiceWaveform from "@/components/ielts/VoiceWaveform";
 import EmotionVisualization from "@/components/ielts/EmotionVisualization";
+import SessionHistoryPanel from "@/components/ielts/SessionHistoryPanel";
 import { cn } from "@/lib/utils";
 
 const ieltsTopics = [
@@ -55,6 +56,7 @@ const IELTS = () => {
     isConnecting,
     isUserSpeaking,
     isAISpeaking,
+    isMuted,
     messages: voiceMessages,
     currentUserTranscript,
     currentAITranscript,
@@ -64,11 +66,13 @@ const IELTS = () => {
     startSession,
     stopSession,
     requestFeedback,
+    toggleMute,
     formatTime,
   } = useRealtimeVoice(user?.id);
   
   const [inputValue, setInputValue] = useState("");
   const [selectedMode, setSelectedMode] = useState<"speaking" | "writing" | "voice" | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -154,12 +158,36 @@ const IELTS = () => {
                 <span>{isAISpeaking ? "Sarah speaking" : isUserSpeaking ? "You speaking" : "Connected"}</span>
               </div>
             )}
+            {/* History button */}
+            {!isSessionActive && user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHistory(true)}
+                className="rounded-full"
+                title="Session History"
+              >
+                <History className="w-4 h-4" />
+              </Button>
+            )}
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
               <Clock className="w-3 h-3" />
               <span>{formatTime(remainingSeconds)} left</span>
             </div>
           </div>
         </header>
+
+        {/* Session History Overlay */}
+        {showHistory && user && (
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+            <div className="h-full max-w-lg mx-auto">
+              <SessionHistoryPanel 
+                userId={user.id} 
+                onClose={() => setShowHistory(false)} 
+              />
+            </div>
+          </div>
+        )}
 
         {/* Voice Session UI */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -268,19 +296,25 @@ const IELTS = () => {
           <div className="max-w-md mx-auto space-y-4">
             {isSessionActive && (
               <div className="flex items-center justify-center gap-4 text-sm">
-                {isAISpeaking && (
+                {isMuted && (
+                  <div className="flex items-center gap-2 text-red-500">
+                    <MicOff className="w-4 h-4" />
+                    <span>Microphone muted</span>
+                  </div>
+                )}
+                {!isMuted && isAISpeaking && (
                   <div className="flex items-center gap-2 text-rose-500 animate-pulse">
                     <Volume2 className="w-4 h-4" />
                     <span>Sarah is speaking...</span>
                   </div>
                 )}
-                {isUserSpeaking && !isAISpeaking && (
+                {!isMuted && isUserSpeaking && !isAISpeaking && (
                   <div className="flex items-center gap-2 text-emerald-500">
                     <Mic className="w-4 h-4 animate-pulse" />
                     <span>Listening to you...</span>
                   </div>
                 )}
-                {!isAISpeaking && !isUserSpeaking && (
+                {!isMuted && !isAISpeaking && !isUserSpeaking && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Wifi className="w-4 h-4" />
                     <span>Ready - start speaking anytime</span>
@@ -311,6 +345,24 @@ const IELTS = () => {
                 </Button>
               ) : (
                 <>
+                  {/* Mute button */}
+                  <Button
+                    variant={isMuted ? "destructive" : "outline"}
+                    size="icon"
+                    onClick={toggleMute}
+                    className={cn(
+                      "h-12 w-12 rounded-full transition-all",
+                      isMuted && "animate-pulse"
+                    )}
+                    title={isMuted ? "Unmute microphone" : "Mute microphone"}
+                  >
+                    {isMuted ? (
+                      <MicOff className="w-5 h-5" />
+                    ) : (
+                      <Mic className="w-5 h-5" />
+                    )}
+                  </Button>
+
                   <Button
                     variant="outline"
                     size="icon"
@@ -332,10 +384,13 @@ const IELTS = () => {
 
                   <div className={cn(
                     "h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                    isMuted ? "bg-red-500/20 border-2 border-red-500" :
                     isUserSpeaking ? "bg-emerald-500 animate-pulse scale-110" : 
                     isAISpeaking ? "bg-rose-500 animate-pulse" : "bg-secondary"
                   )}>
-                    {isUserSpeaking ? (
+                    {isMuted ? (
+                      <MicOff className="w-5 h-5 text-red-500" />
+                    ) : isUserSpeaking ? (
                       <Mic className="w-5 h-5 text-white" />
                     ) : isAISpeaking ? (
                       <Volume2 className="w-5 h-5 text-white" />

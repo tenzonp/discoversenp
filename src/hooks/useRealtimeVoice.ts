@@ -17,17 +17,20 @@ export function useRealtimeVoice(userId: string | undefined) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [messages, setMessages] = useState<VoiceMessage[]>([]);
   const [currentUserTranscript, setCurrentUserTranscript] = useState("");
   const [currentAITranscript, setCurrentAITranscript] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState(MAX_FREE_SECONDS);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [emotionMetrics, setEmotionMetrics] = useState<EmotionMetrics>({
     confidence: 50,
     energy: 50,
     stress: 30,
     engagement: 50,
   });
+  const [emotionHistory, setEmotionHistory] = useState<EmotionMetrics[]>([]);
 
   const chatRef = useRef<RealtimeVoiceChat | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -138,9 +141,10 @@ export function useRealtimeVoice(userId: string | undefined) {
     }
   }, []);
 
-  // Handle emotion updates
+  // Handle emotion updates - also track history
   const handleEmotionUpdate = useCallback((metrics: EmotionMetrics) => {
     setEmotionMetrics(metrics);
+    setEmotionHistory((prev) => [...prev.slice(-100), metrics]); // Keep last 100
   }, []);
 
   // Start session
@@ -172,8 +176,11 @@ export function useRealtimeVoice(userId: string | undefined) {
 
       setIsSessionActive(true);
       setIsConnecting(false);
+      setIsMuted(false);
       setMessages([]);
       setSessionSeconds(0);
+      setEmotionHistory([]);
+      setCurrentSessionId(null);
 
       // Start session timer
       timerRef.current = setInterval(() => {
@@ -200,11 +207,16 @@ export function useRealtimeVoice(userId: string | undefined) {
     }
   }, [remainingSeconds, handleMessage, handleEmotionUpdate, handleTranscript, handleSpeakingChange, toast]);
 
-  // Stop session
-  const stopSession = useCallback(() => {
+  // Stop session and save to history
+  const stopSession = useCallback(async () => {
+    const messagesToSave = [...messages];
+    const durationToSave = sessionSeconds;
+    const emotionHistoryToSave = [...emotionHistory];
+    
     setIsSessionActive(false);
     setIsUserSpeaking(false);
     setIsAISpeaking(false);
+    setIsMuted(false);
     setCurrentUserTranscript("");
     setCurrentAITranscript("");
 
@@ -219,15 +231,77 @@ export function useRealtimeVoice(userId: string | undefined) {
     }
 
     // Save usage
-    if (sessionSeconds > 0) {
-      updateUsage(sessionSeconds);
+    if (durationToSave > 0) {
+      updateUsage(durationToSave);
+    }
+
+    // Save session to history if there are messages
+    if (userId && messagesToSave.length > 0) {
+      try {
+        // Calculate emotion summary
+        const emotionSummary = emotionHistoryToSave.length > 0 ? {
+          avgConfidence: emotionHistoryToSave.reduce((a, b) => a + b.confidence, 0) / emotionHistoryToSave.length,
+          avgEnergy: emotionHistoryToSave.reduce((a, b) => a + b.energy, 0) / emotionHistoryToSave.length,
+          avgStress: emotionHistoryToSave.reduce((a, b) => a + b.stress, 0) / emotionHistoryToSave.length,
+          avgEngagement: emotionHistoryToSave.reduce((a, b) => a + b.engagement, 0) / emotionHistoryToSave.length,
+        } : null;
+
+        // Check if last message contains feedback
+        const lastAssistantMsg = messagesToSave.filter(m => m.role === 'assistant').pop();
+        const hasFeedback = lastAssistantMsg?.content.toLowerCase().includes('band') || 
+                           lastAssistantMsg?.content.toLowerCase().includes('score');
+        
+        // Extract band score if mentioned
+        let bandScore = null;
+        if (hasFeedback && lastAssistantMsg) {
+          const bandMatch = lastAssistantMsg.content.match(/band\s*(\d+\.?\d?)/i);
+          if (bandMatch) {
+            bandScore = parseFloat(bandMatch[1]);
+            if (bandScore > 9) bandScore = null; // Invalid score
+          }
+        }
+
+        const { error } = await supabase.from("voice_sessions").insert({
+          user_id: userId,
+          session_type: "ielts",
+          duration_seconds: durationToSave,
+          messages: messagesToSave.map(m => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp.toISOString(),
+          })),
+          emotion_summary: emotionSummary,
+          ai_feedback: hasFeedback ? lastAssistantMsg?.content : null,
+          band_score_estimate: bandScore,
+        });
+
+        if (error) {
+          console.error("Failed to save session:", error);
+        } else {
+          console.log("Session saved to history");
+        }
+      } catch (err) {
+        console.error("Error saving session:", err);
+      }
     }
 
     toast({
       title: "Session ended",
-      description: `Great practice! You spoke for ${formatTime(sessionSeconds)}`,
+      description: `Great practice! You spoke for ${formatTime(durationToSave)}`,
     });
-  }, [sessionSeconds, updateUsage, toast]);
+  }, [messages, sessionSeconds, emotionHistory, userId, updateUsage, toast]);
+
+  // Toggle microphone mute
+  const toggleMute = useCallback(() => {
+    if (chatRef.current) {
+      const newMuted = chatRef.current.toggleMute();
+      setIsMuted(newMuted);
+      toast({
+        title: newMuted ? "Microphone muted 🔇" : "Microphone on 🎤",
+        description: newMuted ? "Sarah won't hear you until you unmute" : "Sarah can hear you now",
+      });
+    }
+  }, [toast]);
 
   // Request feedback via text
   const requestFeedback = useCallback(() => {
@@ -267,6 +341,7 @@ export function useRealtimeVoice(userId: string | undefined) {
     isConnecting,
     isUserSpeaking,
     isAISpeaking,
+    isMuted,
     messages,
     currentUserTranscript,
     currentAITranscript,
@@ -276,6 +351,7 @@ export function useRealtimeVoice(userId: string | undefined) {
     startSession,
     stopSession,
     requestFeedback,
+    toggleMute,
     formatTime,
   };
 }

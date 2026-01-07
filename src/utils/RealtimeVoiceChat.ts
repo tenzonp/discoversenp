@@ -34,6 +34,8 @@ export class RealtimeVoiceChat {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private emotionInterval: NodeJS.Timeout | null = null;
+  private isMuted: boolean = false;
+  private audioTrack: MediaStreamTrack | null = null;
   
   constructor(
     private onMessage: (message: RealtimeMessage) => void,
@@ -82,8 +84,11 @@ export class RealtimeVoiceChat {
       // Set up audio analysis for emotion detection
       this.setupAudioAnalysis(this.localStream);
 
-      // Add local audio track
+      // Add local audio track and store reference for muting
       this.localStream.getTracks().forEach((track) => {
+        if (track.kind === 'audio') {
+          this.audioTrack = track;
+        }
         this.pc!.addTrack(track, this.localStream!);
       });
 
@@ -277,5 +282,27 @@ export class RealtimeVoiceChat {
 
   isConnected(): boolean {
     return this.dc?.readyState === "open";
+  }
+
+  // Mute/unmute microphone
+  toggleMute(): boolean {
+    if (this.audioTrack) {
+      this.isMuted = !this.isMuted;
+      this.audioTrack.enabled = !this.isMuted;
+      console.log(this.isMuted ? "🔇 Microphone muted" : "🔊 Microphone unmuted");
+      return this.isMuted;
+    }
+    return false;
+  }
+
+  getMuted(): boolean {
+    return this.isMuted;
+  }
+
+  setMuted(muted: boolean): void {
+    if (this.audioTrack) {
+      this.isMuted = muted;
+      this.audioTrack.enabled = !muted;
+    }
   }
 }
