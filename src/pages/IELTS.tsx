@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatHistory } from "@/hooks/useChatHistory";
-import { useVoiceSession } from "@/hooks/useVoiceSession";
+import { useRealtimeVoice } from "@/hooks/useRealtimeVoice";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
@@ -19,14 +19,14 @@ import {
   Volume2,
   Loader2,
   Star,
-  TrendingUp,
-  AlertCircle,
-  Zap
+  Zap,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import ChatMessage from "@/components/chat/ChatMessage";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import VoiceWaveform from "@/components/ielts/VoiceWaveform";
-import LiveAnalysisPanel from "@/components/ielts/LiveAnalysisPanel";
+import EmotionVisualization from "@/components/ielts/EmotionVisualization";
 import { cn } from "@/lib/utils";
 
 const ieltsTopics = [
@@ -52,25 +52,23 @@ const IELTS = () => {
 
   const {
     isSessionActive,
-    isListening,
-    isSpeaking,
-    isProcessing,
+    isConnecting,
+    isUserSpeaking,
+    isAISpeaking,
     messages: voiceMessages,
-    transcript,
+    currentUserTranscript,
+    currentAITranscript,
     remainingSeconds,
     sessionSeconds,
-    liveScore,
-    wordCount,
-    speakingDuration,
+    emotionMetrics,
     startSession,
     stopSession,
     requestFeedback,
     formatTime,
-  } = useVoiceSession(user?.id);
+  } = useRealtimeVoice(user?.id);
   
   const [inputValue, setInputValue] = useState("");
   const [selectedMode, setSelectedMode] = useState<"speaking" | "writing" | "voice" | null>(null);
-  const [showAnalysis, setShowAnalysis] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -138,75 +136,63 @@ const IELTS = () => {
             <div>
               <h1 className="font-semibold text-sm">Voice Practice</h1>
               <p className="text-xs text-muted-foreground">
-                {isSessionActive ? `Session: ${formatTime(sessionSeconds)}` : "Real-time AI Trainer"}
+                {isConnecting ? "Connecting..." : isSessionActive ? `Session: ${formatTime(sessionSeconds)}` : "Real-time AI Conversation"}
               </p>
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {isSessionActive && liveScore.overall > 0 && (
-              <div className="flex items-center gap-1 text-xs font-medium bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full">
-                <TrendingUp className="w-3 h-3" />
-                <span>{Math.round(liveScore.overall)}/100</span>
+            {isSessionActive && (
+              <div className={cn(
+                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
+                isAISpeaking ? "bg-rose-500/20 text-rose-600 dark:text-rose-400" : 
+                isUserSpeaking ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" : 
+                "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+              )}>
+                {isAISpeaking ? <Volume2 className="w-3 h-3 animate-pulse" /> : 
+                 isUserSpeaking ? <Mic className="w-3 h-3 animate-pulse" /> : 
+                 <Wifi className="w-3 h-3" />}
+                <span>{isAISpeaking ? "Sarah speaking" : isUserSpeaking ? "You speaking" : "Connected"}</span>
               </div>
             )}
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
               <Clock className="w-3 h-3" />
-              <span>{formatTime(remainingSeconds)} left today</span>
+              <span>{formatTime(remainingSeconds)} left</span>
             </div>
           </div>
         </header>
 
-        {/* Live Score Panel - shows when session active */}
-        {isSessionActive && liveScore.overall > 0 && (
-          <div className="px-4 py-3 bg-secondary/50 border-b border-border/50">
-            <div className="max-w-2xl mx-auto">
-              <div className="grid grid-cols-4 gap-2 text-center text-xs mb-2">
-                <div className="p-2 rounded-lg bg-background">
-                  <div className="font-semibold text-foreground">{Math.round(liveScore.fluency)}</div>
-                  <div className="text-muted-foreground">Fluency</div>
-                </div>
-                <div className="p-2 rounded-lg bg-background">
-                  <div className="font-semibold text-foreground">{Math.round(liveScore.vocabulary)}</div>
-                  <div className="text-muted-foreground">Vocab</div>
-                </div>
-                <div className="p-2 rounded-lg bg-background">
-                  <div className="font-semibold text-foreground">{Math.round(liveScore.grammar)}</div>
-                  <div className="text-muted-foreground">Grammar</div>
-                </div>
-                <div className="p-2 rounded-lg bg-background">
-                  <div className="font-semibold text-foreground">{Math.round(liveScore.pronunciation)}</div>
-                  <div className="text-muted-foreground">Pronun.</div>
-                </div>
-              </div>
-              {liveScore.mistakes.length > 0 && (
-                <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 p-2 rounded-lg">
-                  <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  <div className="space-y-0.5">
-                    {liveScore.mistakes.slice(0, 2).map((mistake, i) => (
-                      <p key={i}>{mistake}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Voice Session UI */}
-        <div className="flex-1 flex flex-col lg:flex-row">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {voiceMessages.length === 0 && !isSessionActive ? (
+            {voiceMessages.length === 0 && !isSessionActive && !isConnecting ? (
               <div className="text-center py-12 space-y-6 max-w-md mx-auto">
-                <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shadow-lg animate-pulse">
+                <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shadow-lg">
                   <Headphones className="w-12 h-12 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-2">Real-Time Voice Practice</h2>
+                  <h2 className="text-xl font-bold mb-2">Real-Time Voice Conversation</h2>
                   <p className="text-muted-foreground text-sm">
-                    Practice speaking with AI examiner Sarah. Live scoring & feedback!
+                    Have a natural two-way conversation with AI examiner Sarah. Speak freely - she'll respond in real-time!
                   </p>
                 </div>
+                <div className="grid grid-cols-2 gap-3 text-left text-sm">
+                  <div className="p-3 bg-secondary/50 rounded-xl">
+                    <span className="text-lg">🎤</span>
+                    <p className="font-medium mt-1">Natural Speech</p>
+                    <p className="text-xs text-muted-foreground">Just talk naturally, AI responds instantly</p>
+                  </div>
+                  <div className="p-3 bg-secondary/50 rounded-xl">
+                    <span className="text-lg">💭</span>
+                    <p className="font-medium mt-1">Emotion Analysis</p>
+                    <p className="text-xs text-muted-foreground">Live confidence & energy tracking</p>
+                  </div>
+                </div>
+              </div>
+            ) : isConnecting ? (
+              <div className="text-center py-12 space-y-4">
+                <Loader2 className="w-12 h-12 mx-auto animate-spin text-rose-500" />
+                <p className="text-muted-foreground">Connecting to AI examiner Sarah...</p>
               </div>
             ) : (
               <div className="max-w-2xl mx-auto space-y-4">
@@ -214,7 +200,7 @@ const IELTS = () => {
                   <div
                     key={message.id}
                     className={cn(
-                      "flex",
+                      "flex animate-in fade-in-50 slide-in-from-bottom-2 duration-300",
                       message.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
@@ -234,27 +220,29 @@ const IELTS = () => {
                   </div>
                 ))}
                 
-                {/* Live transcript with waveform */}
-                {transcript && (
-                  <div className="flex justify-end">
+                {/* Live user transcript */}
+                {currentUserTranscript && (
+                  <div className="flex justify-end animate-in fade-in-50 duration-200">
                     <div className="max-w-[80%] p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 rounded-br-sm text-sm">
                       <div className="flex items-center gap-2 mb-1">
-                        <Zap className="w-3 h-3 text-emerald-500" />
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">Live</span>
+                        <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400">You (live)</span>
                       </div>
-                      <p className="text-foreground">{transcript}</p>
-                      <VoiceWaveform isActive={true} isListening={isListening} isSpeaking={false} className="mt-2" />
+                      <p className="text-foreground">{currentUserTranscript}</p>
+                      <VoiceWaveform isActive={true} isListening={true} isSpeaking={false} className="mt-2" />
                     </div>
                   </div>
                 )}
 
-                {isProcessing && (
-                  <div className="flex justify-start">
-                    <div className="bg-secondary p-3 rounded-2xl rounded-bl-sm">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
-                        <span className="text-xs text-muted-foreground">Sarah is thinking...</span>
+                {/* Live AI transcript */}
+                {currentAITranscript && (
+                  <div className="flex justify-start animate-in fade-in-50 duration-200">
+                    <div className="max-w-[80%] p-3 rounded-2xl bg-rose-500/20 border border-rose-500/30 rounded-bl-sm text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Volume2 className="w-3 h-3 text-rose-500 animate-pulse" />
+                        <span className="text-xs text-rose-600 dark:text-rose-400">Sarah (live)</span>
                       </div>
+                      <p className="text-foreground">{currentAITranscript}</p>
                     </div>
                   </div>
                 )}
@@ -263,15 +251,13 @@ const IELTS = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Live Analysis Panel - Side panel on desktop */}
-          {isSessionActive && showAnalysis && (
+          {/* Emotion Visualization Panel - Side panel on desktop */}
+          {isSessionActive && (
             <div className="lg:w-80 p-4 lg:border-l border-t lg:border-t-0 border-border bg-card/50">
-              <LiveAnalysisPanel
-                liveScore={liveScore}
-                isListening={isListening}
-                transcript={transcript}
-                wordCount={wordCount}
-                speakingDuration={speakingDuration}
+              <EmotionVisualization
+                metrics={emotionMetrics}
+                isActive={isSessionActive}
+                isSpeaking={isUserSpeaking}
               />
             </div>
           )}
@@ -282,16 +268,22 @@ const IELTS = () => {
           <div className="max-w-md mx-auto space-y-4">
             {isSessionActive && (
               <div className="flex items-center justify-center gap-4 text-sm">
-                {isSpeaking && (
-                  <div className="flex items-center gap-2 text-primary animate-pulse">
+                {isAISpeaking && (
+                  <div className="flex items-center gap-2 text-rose-500 animate-pulse">
                     <Volume2 className="w-4 h-4" />
                     <span>Sarah is speaking...</span>
                   </div>
                 )}
-                {isListening && !isSpeaking && (
+                {isUserSpeaking && !isAISpeaking && (
                   <div className="flex items-center gap-2 text-emerald-500">
                     <Mic className="w-4 h-4 animate-pulse" />
                     <span>Listening to you...</span>
+                  </div>
+                )}
+                {!isAISpeaking && !isUserSpeaking && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Wifi className="w-4 h-4" />
+                    <span>Ready - start speaking anytime</span>
                   </div>
                 )}
               </div>
@@ -302,11 +294,20 @@ const IELTS = () => {
                 <Button
                   size="lg"
                   onClick={startSession}
-                  disabled={remainingSeconds <= 0}
+                  disabled={remainingSeconds <= 0 || isConnecting}
                   className="h-16 px-8 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white shadow-lg"
                 >
-                  <Phone className="w-5 h-5 mr-2" />
-                  Start Voice Session
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="w-5 h-5 mr-2" />
+                      Start Conversation
+                    </>
+                  )}
                 </Button>
               ) : (
                 <>
@@ -330,13 +331,16 @@ const IELTS = () => {
                   </Button>
 
                   <div className={cn(
-                    "h-12 w-12 rounded-full flex items-center justify-center",
-                    isListening ? "bg-emerald-500 animate-pulse" : "bg-secondary"
+                    "h-12 w-12 rounded-full flex items-center justify-center transition-all",
+                    isUserSpeaking ? "bg-emerald-500 animate-pulse scale-110" : 
+                    isAISpeaking ? "bg-rose-500 animate-pulse" : "bg-secondary"
                   )}>
-                    {isListening ? (
+                    {isUserSpeaking ? (
                       <Mic className="w-5 h-5 text-white" />
+                    ) : isAISpeaking ? (
+                      <Volume2 className="w-5 h-5 text-white" />
                     ) : (
-                      <MicOff className="w-5 h-5 text-muted-foreground" />
+                      <Wifi className="w-5 h-5 text-muted-foreground" />
                     )}
                   </div>
                 </>
