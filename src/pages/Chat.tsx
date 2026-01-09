@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatHistory } from "@/hooks/useChatHistory";
+import { useMoodHistory } from "@/hooks/useMoodHistory";
+import { useChatMemory } from "@/hooks/useChatMemory";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -9,7 +11,10 @@ import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ConversationList } from "@/components/chat/ConversationList";
 import ModeSelector, { ChatMode } from "@/components/chat/ModeSelector";
-import { AlertCircle } from "lucide-react";
+import MoodCheckin from "@/components/chat/MoodCheckin";
+import VoiceChatModal from "@/components/chat/VoiceChatModal";
+import { AlertCircle, Mic } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const MAX_MESSAGES = 100;
 
@@ -21,6 +26,8 @@ const Chat = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [showHistory, setShowHistory] = useState(false);
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
+  const [showMoodCheckin, setShowMoodCheckin] = useState(true);
   const [mode, setMode] = useState<ChatMode>("friend");
   
   const {
@@ -33,6 +40,9 @@ const Chat = () => {
     deleteConversation,
     clearChat,
   } = useChatHistory(user?.id, mode);
+
+  const { buildMoodContext, loadMoodHistory } = useMoodHistory(user?.id);
+  const { buildMemoryContext, extractAndSaveInfo } = useChatMemory(user?.id);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isLimitReached = messages.length >= MAX_MESSAGES;
@@ -54,9 +64,26 @@ const Chat = () => {
     }
   };
 
-  const handleSend = (content: string, imageUrl?: string, generateImagePrompt?: string) => {
+  const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string) => {
     if (isLimitReached) return;
-    sendMessage(content, imageUrl, generateImagePrompt);
+    // Extract and save important info from user message
+    await extractAndSaveInfo(content);
+    // Send with context
+    const moodContext = buildMoodContext();
+    const memoryContext = buildMemoryContext();
+    const fullContext = memoryContext + moodContext;
+    sendMessage(content, imageUrl, generateImagePrompt, fullContext);
+  };
+
+  const handleMoodComplete = () => {
+    setShowMoodCheckin(false);
+    loadMoodHistory();
+  };
+
+  const handleVoiceTranscript = (text: string, role: "user" | "assistant") => {
+    if (role === "user" && text.trim()) {
+      handleSend(text);
+    }
   };
 
   if (loading) {
@@ -77,6 +104,15 @@ const Chat = () => {
         onShowHistory={() => setShowHistory(true)}
       />
 
+      {/* Voice Chat Button */}
+      <Button
+        onClick={() => setShowVoiceChat(true)}
+        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full shadow-lg bg-gradient-to-br from-primary to-primary/80"
+        size="icon"
+      >
+        <Mic className="w-6 h-6" />
+      </Button>
+
       {/* Mode Selector */}
       <div className="px-4 py-3 border-b border-border bg-background/50">
         <ModeSelector currentMode={mode} onModeChange={handleModeChange} />
@@ -85,6 +121,17 @@ const Chat = () => {
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+            {/* Mood Check-in */}
+            {user && showMoodCheckin && (
+              <div className="w-full max-w-md mb-6">
+                <MoodCheckin 
+                  userId={user.id} 
+                  onComplete={handleMoodComplete}
+                  onDismiss={() => setShowMoodCheckin(false)}
+                />
+              </div>
+            )}
+            
             <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mb-6 shadow-lg">
               <span className="text-2xl text-primary-foreground font-bold">भ</span>
             </div>
@@ -130,6 +177,13 @@ const Chat = () => {
           onClose={() => setShowHistory(false)}
         />
       )}
+
+      {/* Voice Chat Modal */}
+      <VoiceChatModal
+        isOpen={showVoiceChat}
+        onClose={() => setShowVoiceChat(false)}
+        onTranscriptAdd={handleVoiceTranscript}
+      />
     </div>
   );
 };
