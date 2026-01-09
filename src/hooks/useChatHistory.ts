@@ -118,7 +118,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
   }, [loadConversations]);
 
   // Send message with streaming
-  const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string) => {
+  const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string, userContext?: string) => {
     if ((!content.trim() && !imageUrl) || isLoading || !userId) return;
 
     let convId = currentConversationId;
@@ -222,7 +222,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: messagesToSend, mode }),
+        body: JSON.stringify({ messages: messagesToSend, mode, userContext }),
       });
 
       if (!response.ok) {
