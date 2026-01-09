@@ -7,9 +7,6 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
-import Loksewa from "./pages/Loksewa";
-import IELTS from "./pages/IELTS";
-import Student from "./pages/Student";
 import Profile from "./pages/Profile";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import NotFound from "./pages/NotFound";
@@ -27,9 +24,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/loksewa" element={<Loksewa />} />
-            <Route path="/ielts" element={<IELTS />} />
-            <Route path="/student" element={<Student />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/progress" element={<ProgressDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

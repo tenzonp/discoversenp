@@ -1,11 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, MessageCircle, BookOpen, User } from "lucide-react";
+import { Home, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: MessageCircle, label: "Chat", path: "/chat" },
-  { icon: BookOpen, label: "Learn", path: "/loksewa" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
@@ -13,8 +12,8 @@ export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hide on pages with their own navigation
-  if (["/chat", "/loksewa", "/ielts", "/student"].includes(location.pathname)) {
+  // Hide on chat page
+  if (location.pathname === "/chat") {
     return null;
   }
 

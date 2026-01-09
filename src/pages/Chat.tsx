@@ -15,9 +15,6 @@ const MAX_MESSAGES = 100;
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey there! 👋", subtitle: "La bro, k cha halkhabar? Kura gar na!" },
-  loksewa: { title: "Loksewa Mode 📚", subtitle: "Exam preparation lai ready? Syllabus anusar padhum!" },
-  ielts: { title: "IELTS Practice 🗣️", subtitle: "Let's practice speaking naturally. Band 7+ target garum!" },
-  student: { title: "Study Help 🎓", subtitle: "Kun subject ma help chahincha? Step by step bujhauchu!" },
 };
 
 const Chat = () => {

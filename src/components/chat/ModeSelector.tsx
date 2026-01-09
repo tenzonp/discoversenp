@@ -1,7 +1,7 @@
-import { Users, BookOpen, Languages, GraduationCap } from "lucide-react";
+import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ChatMode = "friend" | "loksewa" | "ielts" | "student";
+export type ChatMode = "friend";
 
 interface ModeSelectorProps {
   currentMode: ChatMode;
@@ -16,30 +16,6 @@ const modes = [
     description: "Casual chat",
     color: "text-primary",
     bgColor: "bg-primary/10",
-  },
-  {
-    id: "loksewa" as ChatMode,
-    label: "Loksewa",
-    icon: BookOpen,
-    description: "Exam prep",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
-  },
-  {
-    id: "ielts" as ChatMode,
-    label: "IELTS",
-    icon: Languages,
-    description: "English practice",
-    color: "text-violet-500",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    id: "student" as ChatMode,
-    label: "Student",
-    icon: GraduationCap,
-    description: "Study help",
-    color: "text-teal-500",
-    bgColor: "bg-teal-500/10",
   },
 ];
 
