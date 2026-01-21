@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, MicOff, Image, X, Loader2, Sparkles } from "lucide-react";
+import { Send, Mic, MicOff, Image, X, Loader2, Sparkles, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
 
 interface ChatInputProps {
-  onSend: (message: string, imageUrl?: string, generateImagePrompt?: string) => void;
+  onSend: (message: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => void;
   isLoading: boolean;
 }
 
@@ -62,6 +62,24 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                .trim();
   };
 
+  // Check if input is a web search request
+  const isWebSearchRequest = (text: string) => {
+    const triggers = [
+      /^search\s+/i, /^google\s+/i, /^find\s+/i, /^lookup\s+/i, /^look up\s+/i,
+      /^khoja\s+/i, /^khoj\s+/i, /web\s+search/i, /internet\s+search/i,
+      /^what'?s?\s+happening/i, /^latest\s+/i, /^news\s+(about|on)\s+/i,
+      /current\s+/i, /today'?s?\s+/i, /real.?time/i
+    ];
+    return triggers.some(t => t.test(text.trim()));
+  };
+
+  const extractSearchQuery = (text: string) => {
+    return text.replace(/^(search|google|find|lookup|look up|khoja|khoj)\s+(for\s+)?/i, "")
+               .replace(/\s*(web|internet)\s*search\s*/i, " ")
+               .replace(/^(what'?s?\s+happening|latest|news)\s+(about|on|with)?\s*/i, "")
+               .trim();
+  };
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -109,6 +127,16 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     if ((!input.trim() && !selectedImage) || isLoading || isUploading || isGenerating) return;
 
     const trimmedInput = input.trim();
+
+    // Check if this is a web search request
+    if (isWebSearchRequest(trimmedInput)) {
+      const query = extractSearchQuery(trimmedInput);
+      if (query) {
+        setInput("");
+        onSend(trimmedInput, undefined, undefined, query);
+        return;
+      }
+    }
 
     // Check if this is an image generation request
     if (isImageRequest(trimmedInput) && remaining && remaining > 0) {
@@ -178,7 +206,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Sunirako..." : "Message lekha... (\"draw cat\" for images)"}
+            placeholder={isListening ? "Sunirako..." : "Message lekha... (\"search\" for web, \"draw\" for images)"}
             rows={1}
             className={cn(
               "w-full px-4 py-2.5 rounded-2xl bg-secondary border-0 text-sm resize-none placeholder:text-muted-foreground",

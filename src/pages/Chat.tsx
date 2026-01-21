@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useChatHistory } from "@/hooks/useChatHistory";
 import { useMoodHistory } from "@/hooks/useMoodHistory";
 import { useChatMemory } from "@/hooks/useChatMemory";
+import { useWebSearch } from "@/hooks/useWebSearch";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -13,6 +14,7 @@ import { ConversationList } from "@/components/chat/ConversationList";
 import ModeSelector, { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
 import VoiceChatModal from "@/components/chat/VoiceChatModal";
+import WebSearchResults from "@/components/chat/WebSearchResults";
 import { AlertCircle, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -43,6 +45,13 @@ const Chat = () => {
 
   const { buildMoodContext, loadMoodHistory } = useMoodHistory(user?.id);
   const { buildMemoryContext, extractAndSaveInfo } = useChatMemory(user?.id);
+  const { 
+    isSearching, 
+    results: searchResults, 
+    query: searchQuery, 
+    search, 
+    clearResults 
+  } = useWebSearch();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isLimitReached = messages.length >= MAX_MESSAGES;
@@ -64,14 +73,27 @@ const Chat = () => {
     }
   };
 
-  const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string) => {
+  const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => {
     if (isLimitReached) return;
     // Extract and save important info from user message
     await extractAndSaveInfo(content);
-    // Send with context
+    
+    // Build context
     const moodContext = buildMoodContext();
     const memoryContext = buildMemoryContext();
-    const fullContext = memoryContext + moodContext;
+    let fullContext = memoryContext + moodContext;
+    
+    // If web search is requested, perform search and add results to context
+    if (webSearchQuery) {
+      const results = await search(webSearchQuery);
+      if (results && results.length > 0) {
+        const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${webSearchQuery}":\n${results.slice(0, 5).map((r, i) => 
+          `${i + 1}. [${r.title}](${r.url})\n   ${r.description || r.markdown?.slice(0, 200) || ''}`
+        ).join('\n\n')}\n\nUse these search results to answer the user's question. Cite sources when relevant.`;
+        fullContext += searchContext;
+      }
+    }
+    
     sendMessage(content, imageUrl, generateImagePrompt, fullContext);
   };
 
@@ -119,6 +141,22 @@ const Chat = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Web Search Results Panel */}
+        {(isSearching || searchResults.length > 0) && (
+          <div className="px-4 py-3 max-w-2xl mx-auto">
+            <WebSearchResults 
+              results={searchResults}
+              query={searchQuery}
+              isSearching={isSearching}
+              onClose={clearResults}
+              onSelectResult={(result) => {
+                handleSend(`Tell me more about: ${result.title} - ${result.url}`);
+                clearResults();
+              }}
+            />
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
             {/* Mood Check-in */}
@@ -141,7 +179,7 @@ const Chat = () => {
             <p className="text-muted-foreground text-center mb-8 max-w-xs">
               {greeting.subtitle}
             </p>
-            <WelcomeScreen onSuggestionClick={handleSend} />
+            <WelcomeScreen onSuggestionClick={(s) => handleSend(s)} />
           </div>
         ) : (
           <div className="px-4 py-4 space-y-3 max-w-2xl mx-auto">
