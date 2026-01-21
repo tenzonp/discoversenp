@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
+    console.log('Firecrawl raw response:', JSON.stringify(data).slice(0, 500));
 
     if (!response.ok) {
       console.error('Firecrawl API error:', data);
@@ -57,9 +58,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Search successful, found', data.data?.length || 0, 'results');
+    // Firecrawl returns { success: true, data: [...] } - pass it through
+    const results = data.data || [];
+    console.log('Search successful, found', results.length, 'results');
+    
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ success: true, data: results }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
