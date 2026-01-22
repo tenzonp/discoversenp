@@ -127,10 +127,13 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     }
   }, []);
 
-  // ElevenLabs Scribe hook for real-time transcription
+  // ElevenLabs Scribe hook for real-time transcription with Hindi/Nepali support
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.VAD,
+    languageCode: "hi", // Hindi - closest to Nepali for better recognition
+    vadSilenceThresholdSecs: 0.8, // Wait a bit longer for natural pauses
+    minSpeechDurationMs: 300,
     onPartialTranscript: (data) => {
       setCurrentTranscript(data.text);
     },
