@@ -1,11 +1,13 @@
-import { ExternalLink, Globe, Clock, X } from "lucide-react";
+import { ExternalLink, Globe, Clock, X, Zap } from "lucide-react";
 import { SearchResult } from "@/lib/api/firecrawl";
 import { cn } from "@/lib/utils";
+import { TIME_FILTER_LABELS, TIME_FILTER_LABELS_NE } from "@/hooks/useWebSearch";
 
 interface WebSearchResultsProps {
   results: SearchResult[];
   query: string;
   isSearching: boolean;
+  activeTimeFilter?: string;
   onClose: () => void;
   onSelectResult?: (result: SearchResult) => void;
 }
@@ -14,10 +16,14 @@ const WebSearchResults = ({
   results, 
   query, 
   isSearching, 
+  activeTimeFilter = 'qdr:d',
   onClose,
   onSelectResult 
 }: WebSearchResultsProps) => {
   if (!isSearching && results.length === 0) return null;
+
+  const timeLabel = TIME_FILTER_LABELS[activeTimeFilter] || 'Today';
+  const timeLabelNe = TIME_FILTER_LABELS_NE[activeTimeFilter] || 'आज';
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
@@ -28,6 +34,13 @@ const WebSearchResults = ({
           <span className="text-sm font-medium">
             {isSearching ? 'Searching...' : `Results for "${query}"`}
           </span>
+          {/* Time Filter Badge */}
+          {!isSearching && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <Zap className="w-3 h-3" />
+              {timeLabel}
+            </span>
+          )}
         </div>
         <button 
           onClick={onClose}
@@ -42,6 +55,10 @@ const WebSearchResults = ({
         <div className="px-4 py-8 flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground">Bhote le khojdai cha... 🔎</p>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+            <Zap className="w-3 h-3" />
+            Live • {timeLabelNe}
+          </span>
         </div>
       )}
 
@@ -100,7 +117,7 @@ const WebSearchResults = ({
         <div className="px-4 py-2 border-t border-border bg-secondary/20">
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Bhote le internet bata khojeako 🔍
+            Bhote le {timeLabelNe}ko data internet bata lyayo 🔍
           </p>
         </div>
       )}

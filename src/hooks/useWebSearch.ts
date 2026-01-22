@@ -7,6 +7,7 @@ export interface WebSearchState {
   results: SearchResult[];
   query: string;
   error: string | null;
+  activeTimeFilter: string;
 }
 
 // Cache structure: query -> { results, timestamp }
@@ -70,15 +71,33 @@ const TIME_PERIOD_PATTERNS: { pattern: RegExp; tbs: string }[] = [
   { pattern: /\b(last hour|past hour|ek ghanta|1 hour ago)\b/i, tbs: 'qdr:h' },
 ];
 
-// Detect time period from query, defaults to 'qdr:w' (last week) for latest results
+// Detect time period from query - ONLY change from default if user explicitly asks for older data
 export const detectTimeFilter = (query: string): string => {
   for (const { pattern, tbs } of TIME_PERIOD_PATTERNS) {
     if (pattern.test(query)) {
       return tbs;
     }
   }
-  // Default to last week for fresh results unless user specifies otherwise
-  return 'qdr:w';
+  // Default to TODAY (qdr:d) for real-time, current, live data
+  return 'qdr:d';
+};
+
+// Human-readable time filter labels
+export const TIME_FILTER_LABELS: Record<string, string> = {
+  'qdr:h': 'Last Hour',
+  'qdr:d': 'Today',
+  'qdr:w': 'This Week',
+  'qdr:m': 'This Month',
+  'qdr:y': 'This Year',
+};
+
+// Nepali time filter labels
+export const TIME_FILTER_LABELS_NE: Record<string, string> = {
+  'qdr:h': 'गत घण्टा',
+  'qdr:d': 'आज',
+  'qdr:w': 'यो हप्ता',
+  'qdr:m': 'यो महिना',
+  'qdr:y': 'यो वर्ष',
 };
 
 export const useWebSearch = () => {
@@ -87,6 +106,7 @@ export const useWebSearch = () => {
     results: [],
     query: '',
     error: null,
+    activeTimeFilter: 'qdr:d',
   });
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
   const { toast } = useToast();
@@ -144,7 +164,7 @@ export const useWebSearch = () => {
       }
     }
 
-    setState(prev => ({ ...prev, isSearching: true, query, error: null }));
+    setState(prev => ({ ...prev, isSearching: true, query, error: null, activeTimeFilter: timeFilter }));
 
     try {
       const response = await firecrawlApi.search(query, {
@@ -176,7 +196,7 @@ export const useWebSearch = () => {
   }, [toast, getCachedResults, cacheResults]);
 
   const clearResults = useCallback(() => {
-    setState({ isSearching: false, results: [], query: '', error: null });
+    setState({ isSearching: false, results: [], query: '', error: null, activeTimeFilter: 'qdr:d' });
   }, []);
 
   const clearCache = useCallback(() => {
@@ -189,5 +209,7 @@ export const useWebSearch = () => {
     clearResults,
     clearCache,
     shouldAutoSearch,
+    TIME_FILTER_LABELS,
+    TIME_FILTER_LABELS_NE,
   };
 };
