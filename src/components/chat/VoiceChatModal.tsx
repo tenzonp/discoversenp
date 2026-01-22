@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Loader2 } from "lucide-react";
+import { X, Mic, MicOff, Phone, PhoneOff, Loader2, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { RealtimeVoiceChat, EmotionMetrics } from "@/utils/RealtimeVoiceChat";
 import { useToast } from "@/hooks/use-toast";
+import { useConversation } from "@elevenlabs/react";
+import { supabase } from "@/integrations/supabase/client";
+import { AudioAnalyzer, EmotionMetrics } from "@/utils/ElevenLabsVoiceChat";
 
 interface VoiceChatModalProps {
   isOpen: boolean;
@@ -13,71 +15,125 @@ interface VoiceChatModalProps {
 
 const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProps) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
-  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [aiTranscript, setAiTranscript] = useState("");
   const [emotionMetrics, setEmotionMetrics] = useState<EmotionMetrics | null>(null);
   const [sessionDuration, setSessionDuration] = useState(0);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   
-  const chatRef = useRef<RealtimeVoiceChat | null>(null);
+  const audioAnalyzerRef = useRef<AudioAnalyzer | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  const handleSpeakingChange = useCallback((speaking: boolean, who: "user" | "assistant") => {
-    if (who === "user") setIsUserSpeaking(speaking);
-    else setIsAISpeaking(speaking);
-  }, []);
-
-  const handleTranscript = useCallback((text: string, isFinal: boolean, role: "user" | "assistant") => {
-    if (role === "user") {
-      setCurrentTranscript(text);
-      if (isFinal && text.trim()) {
-        onTranscriptAdd?.(text, "user");
-        setCurrentTranscript("");
-      }
-    } else {
-      if (isFinal) {
-        setAiTranscript(text);
-        if (text.trim()) onTranscriptAdd?.(text, "assistant");
-      } else {
-        setAiTranscript(prev => prev + text);
-      }
-    }
-  }, [onTranscriptAdd]);
-
-  const handleEmotionUpdate = useCallback((metrics: EmotionMetrics) => {
-    setEmotionMetrics(metrics);
-  }, []);
-
-  const startSession = useCallback(async () => {
-    try {
-      setIsConnecting(true);
-      
-      const chat = new RealtimeVoiceChat(
-        () => {},
-        handleEmotionUpdate,
-        handleTranscript,
-        handleSpeakingChange
-      );
-      
-      await chat.init();
-      chatRef.current = chat;
-      setIsConnected(true);
+  // ElevenLabs conversation hook
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log("✅ ElevenLabs connected");
+      toast({
+        title: "Voice Connected! 🎤",
+        description: "Bhote sanga bolna ready!",
+      });
       
       // Start session timer
       timerRef.current = setInterval(() => {
         setSessionDuration(prev => prev + 1);
       }, 1000);
+    },
+    onDisconnect: () => {
+      console.log("🔌 ElevenLabs disconnected");
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    },
+    onMessage: (payload) => {
+      console.log("📥 ElevenLabs message:", payload);
       
+      // Handle message based on role
+      const { message, role } = payload;
+      
+      if (role === "user") {
+        setCurrentTranscript(message);
+        if (message.trim()) {
+          onTranscriptAdd?.(message, "user");
+        }
+      } else if (role === "agent") {
+        setAiTranscript(message);
+        if (message.trim()) {
+          onTranscriptAdd?.(message, "assistant");
+        }
+      }
+    },
+    onError: (errorMessage) => {
+      console.error("❌ ElevenLabs error:", errorMessage);
       toast({
-        title: "Voice Connected! 🎤",
-        description: "Bhote sanga bolna ready!",
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Voice connection ma problem ayo. Feri try gara.",
       });
+    },
+  });
+
+  const isConnected = conversation.status === "connected";
+  const isAISpeaking = conversation.isSpeaking;
+
+  const startSession = useCallback(async () => {
+    try {
+      setIsConnecting(true);
+      
+      // Request microphone permission first
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      setLocalStream(stream);
+      
+      // Set up audio analysis for emotion detection
+      audioAnalyzerRef.current = new AudioAnalyzer(setEmotionMetrics);
+      audioAnalyzerRef.current.setupAnalysis(stream);
+
+      // Get token from edge function
+      const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
+      
+      if (error) {
+        console.error("Token error:", error);
+        throw new Error("Failed to get conversation token");
+      }
+
+      // Start conversation - user needs to provide their own agent ID
+      // For now, we'll prompt them to set one up in ElevenLabs
+      if (data?.token) {
+        await conversation.startSession({
+          conversationToken: data.token,
+          connectionType: "webrtc",
+        });
+      } else {
+        // No agent configured - show setup message
+        toast({
+          title: "Setup Required",
+          description: "ElevenLabs Agent ID configure garna paryo. Settings ma ja.",
+          variant: "destructive",
+        });
+        throw new Error("No ElevenLabs agent configured");
+      }
+      
     } catch (error) {
       console.error("Voice session error:", error);
+      
+      // Cleanup on error
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        setLocalStream(null);
+      }
+      if (audioAnalyzerRef.current) {
+        audioAnalyzerRef.current.cleanup();
+        audioAnalyzerRef.current = null;
+      }
+      
       toast({
         variant: "destructive",
         title: "Connection Failed",
@@ -86,31 +142,41 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     } finally {
       setIsConnecting(false);
     }
-  }, [handleEmotionUpdate, handleTranscript, handleSpeakingChange, toast]);
+  }, [conversation, toast, localStream]);
 
-  const stopSession = useCallback(() => {
+  const stopSession = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     
-    if (chatRef.current) {
-      chatRef.current.disconnect();
-      chatRef.current = null;
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
     }
     
-    setIsConnected(false);
+    if (audioAnalyzerRef.current) {
+      audioAnalyzerRef.current.cleanup();
+      audioAnalyzerRef.current = null;
+    }
+    
+    await conversation.endSession();
+    
     setSessionDuration(0);
     setCurrentTranscript("");
     setAiTranscript("");
-  }, []);
+    setEmotionMetrics(null);
+  }, [conversation, localStream]);
 
   const toggleMute = useCallback(() => {
-    if (chatRef.current) {
-      const muted = chatRef.current.toggleMute();
-      setIsMuted(muted);
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = isMuted;
+        setIsMuted(!isMuted);
+      }
     }
-  }, []);
+  }, [localStream, isMuted]);
 
   const handleClose = useCallback(() => {
     stopSession();
@@ -128,15 +194,25 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (chatRef.current) chatRef.current.disconnect();
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+      if (audioAnalyzerRef.current) {
+        audioAnalyzerRef.current.cleanup();
+      }
     };
-  }, []);
+  }, [localStream]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
+
+  // Get input/output volumes for visualization
+  const inputLevel = conversation.getInputVolume?.() || 0;
+  const outputLevel = conversation.getOutputVolume?.() || 0;
+  const isUserSpeaking = inputLevel > 0.02;
 
   if (!isOpen) return null;
 
@@ -152,6 +228,17 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
           <span className="font-medium">
             {isConnecting ? "Connecting..." : isConnected ? `Live • ${formatTime(sessionDuration)}` : "Disconnected"}
           </span>
+          {isConnected && (
+            <div className="flex items-center gap-1 ml-2">
+              <Volume2 className="w-4 h-4 text-muted-foreground" />
+              <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-100 rounded-full"
+                  style={{ width: `${Math.min(100, outputLevel * 200)}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
         <Button variant="ghost" size="icon" onClick={handleClose}>
           <X className="w-5 h-5" />
@@ -175,6 +262,30 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
           )}
         </div>
 
+        {/* Voice Activity Visualization */}
+        {isConnected && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Mic className={cn("w-4 h-4", isUserSpeaking ? "text-green-500" : "text-muted-foreground")} />
+              <div className="w-24 h-3 bg-secondary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-500 transition-all duration-75 rounded-full"
+                  style={{ width: `${Math.min(100, inputLevel * 200)}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Volume2 className={cn("w-4 h-4", isAISpeaking ? "text-primary" : "text-muted-foreground")} />
+              <div className="w-24 h-3 bg-secondary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-75 rounded-full"
+                  style={{ width: `${Math.min(100, outputLevel * 200)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Status Text */}
         <div className="text-center max-w-md">
           {isConnecting ? (
@@ -194,7 +305,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
               )}
               {aiTranscript && !isUserSpeaking && (
                 <p className="text-muted-foreground italic">
-                  "{aiTranscript.slice(-100)}{aiTranscript.length > 100 ? "..." : ""}"
+                  "{aiTranscript.slice(-150)}{aiTranscript.length > 150 ? "..." : ""}"
                 </p>
               )}
               {!isUserSpeaking && !aiTranscript && !currentTranscript && (
