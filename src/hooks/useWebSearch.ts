@@ -55,6 +55,32 @@ export const shouldAutoSearch = (message: string): boolean => {
   return REALTIME_PATTERNS.some(pattern => pattern.test(message));
 };
 
+// Time period patterns for Firecrawl's tbs parameter
+// 'qdr:h' = hour, 'qdr:d' = day, 'qdr:w' = week, 'qdr:m' = month, 'qdr:y' = year
+const TIME_PERIOD_PATTERNS: { pattern: RegExp; tbs: string }[] = [
+  // Today / Aaj
+  { pattern: /\b(today|aaj|aajako|ahile|now|just now|abhi)\b/i, tbs: 'qdr:d' },
+  // This week / Yo hapta
+  { pattern: /\b(this week|yo hapta|yo hafta|past week|last week|gata hapta)\b/i, tbs: 'qdr:w' },
+  // This month / Yo mahina  
+  { pattern: /\b(this month|yo mahina|past month|last month|gata mahina)\b/i, tbs: 'qdr:m' },
+  // This year / Yo barsa
+  { pattern: /\b(this year|yo barsa|yo sal|past year|last year|gata barsa)\b/i, tbs: 'qdr:y' },
+  // Last hour
+  { pattern: /\b(last hour|past hour|ek ghanta|1 hour ago)\b/i, tbs: 'qdr:h' },
+];
+
+// Detect time period from query, defaults to 'qdr:w' (last week) for latest results
+export const detectTimeFilter = (query: string): string => {
+  for (const { pattern, tbs } of TIME_PERIOD_PATTERNS) {
+    if (pattern.test(query)) {
+      return tbs;
+    }
+  }
+  // Default to last week for fresh results unless user specifies otherwise
+  return 'qdr:w';
+};
+
 export const useWebSearch = () => {
   const [state, setState] = useState<WebSearchState>({
     isSearching: false,
@@ -103,9 +129,15 @@ export const useWebSearch = () => {
   const search = useCallback(async (query: string, options?: { limit?: number; timeFilter?: string; skipCache?: boolean }) => {
     if (!query.trim()) return null;
 
+    // Auto-detect time filter if not provided
+    const timeFilter = options?.timeFilter || detectTimeFilter(query);
+
+    // Include time filter in cache key
+    const cacheKey = `${query}__${timeFilter}`;
+
     // Check cache first (unless skipCache is true)
     if (!options?.skipCache) {
-      const cached = getCachedResults(query);
+      const cached = getCachedResults(cacheKey);
       if (cached) {
         setState(prev => ({ ...prev, isSearching: false, query, results: cached, error: null }));
         return cached;
@@ -117,7 +149,7 @@ export const useWebSearch = () => {
     try {
       const response = await firecrawlApi.search(query, {
         limit: options?.limit || 5,
-        tbs: options?.timeFilter,
+        tbs: timeFilter,
       });
 
       if (!response.success) {
@@ -126,8 +158,8 @@ export const useWebSearch = () => {
 
       const results = response.data || [];
       
-      // Cache the results
-      cacheResults(query, results);
+      // Cache the results with time filter key
+      cacheResults(cacheKey, results);
       
       setState(prev => ({ ...prev, isSearching: false, results }));
       return results;
