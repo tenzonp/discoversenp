@@ -49,6 +49,7 @@ const Chat = () => {
     isSearching, 
     results: searchResults, 
     query: searchQuery, 
+    activeTimeFilter,
     search, 
     clearResults,
     shouldAutoSearch,
@@ -154,6 +155,7 @@ const Chat = () => {
               results={searchResults}
               query={searchQuery}
               isSearching={isSearching}
+              activeTimeFilter={activeTimeFilter}
               onClose={clearResults}
               onSelectResult={(result) => {
                 handleSend(`Tell me more about: ${result.title} - ${result.url}`);
