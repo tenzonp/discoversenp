@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Sarah - Best for conversational multilingual content (natural, expressive)
-const DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
+// Matilda - Best for expressive multilingual content with warm, natural tone
+const DEFAULT_VOICE_ID = "XrExE9yKIg1WjnnlVkGX";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,8 +27,9 @@ serve(async (req) => {
 
     const selectedVoiceId = voiceId || DEFAULT_VOICE_ID;
 
-    console.log(`🔊 Generating TTS for: "${text.substring(0, 50)}..."`);
+    console.log(`🔊 Generating TTS for: "${text.substring(0, 50)}..." with v3 model`);
 
+    // Use ElevenLabs v3 (Flash) - most natural and emotionally expressive model
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
       {
@@ -39,13 +40,13 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_multilingual_v2", // Best for Nepali/Hindi/multilingual - natural sounding
+          model_id: "eleven_flash_v2_5", // Fastest with excellent multilingual quality
           voice_settings: {
-            stability: 0.35, // Lower = more expressive & natural
-            similarity_boost: 0.85, // Higher = clearer voice
-            style: 0.45, // Add expressiveness for conversational tone
+            stability: 0.30, // Very low for maximum expressiveness
+            similarity_boost: 0.80, 
+            style: 0.65, // High style for conversational, natural delivery
             use_speaker_boost: true,
-            speed: 0.95, // Slightly slower for clarity
+            speed: 1.0,
           },
         }),
       }
@@ -58,7 +59,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
-    console.log("✅ TTS generated successfully with multilingual model");
+    console.log("✅ TTS generated successfully with flash v2.5 model");
 
     return new Response(audioBuffer, {
       headers: {
