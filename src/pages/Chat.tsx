@@ -50,7 +50,8 @@ const Chat = () => {
     results: searchResults, 
     query: searchQuery, 
     search, 
-    clearResults 
+    clearResults,
+    shouldAutoSearch,
   } = useWebSearch();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -83,11 +84,16 @@ const Chat = () => {
     const memoryContext = buildMemoryContext();
     let fullContext = memoryContext + moodContext;
     
-    // If web search is requested, perform search and add results to context
-    if (webSearchQuery) {
-      const results = await search(webSearchQuery);
+    // Determine if we need web search:
+    // 1. Explicit search query passed from ChatInput
+    // 2. Auto-detect based on message content
+    const searchQueryToUse = webSearchQuery || (shouldAutoSearch(content) ? content : null);
+    
+    // If web search is needed, perform search and add results to context
+    if (searchQueryToUse) {
+      const results = await search(searchQueryToUse);
       if (results && results.length > 0) {
-        const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${webSearchQuery}":\n${results.slice(0, 5).map((r, i) => 
+        const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${searchQueryToUse}":\n${results.slice(0, 5).map((r, i) => 
           `${i + 1}. [${r.title}](${r.url})\n   ${r.description || r.markdown?.slice(0, 200) || ''}`
         ).join('\n\n')}\n\nUse these search results to answer the user's question. Cite sources when relevant.`;
         fullContext += searchContext;

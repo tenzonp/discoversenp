@@ -62,21 +62,19 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                .trim();
   };
 
-  // Check if input is a web search request
-  const isWebSearchRequest = (text: string) => {
+  // Check if input is an explicit web search request (with trigger words)
+  const isExplicitWebSearchRequest = (text: string) => {
     const triggers = [
       /^search\s+/i, /^google\s+/i, /^find\s+/i, /^lookup\s+/i, /^look up\s+/i,
-      /^khoja\s+/i, /^khoj\s+/i, /web\s+search/i, /internet\s+search/i,
-      /^what'?s?\s+happening/i, /^latest\s+/i, /^news\s+(about|on)\s+/i,
-      /current\s+/i, /today'?s?\s+/i, /real.?time/i
+      /^khoja\s+/i, /^khoj\s+/i, /web\s+search/i, /internet\s+search/i
     ];
     return triggers.some(t => t.test(text.trim()));
   };
 
   const extractSearchQuery = (text: string) => {
+    // Remove explicit trigger words if present
     return text.replace(/^(search|google|find|lookup|look up|khoja|khoj)\s+(for\s+)?/i, "")
                .replace(/\s*(web|internet)\s*search\s*/i, " ")
-               .replace(/^(what'?s?\s+happening|latest|news)\s+(about|on|with)?\s*/i, "")
                .trim();
   };
 
@@ -128,8 +126,8 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
     const trimmedInput = input.trim();
 
-    // Check if this is a web search request
-    if (isWebSearchRequest(trimmedInput)) {
+    // Check if this is an explicit web search request
+    if (isExplicitWebSearchRequest(trimmedInput)) {
       const query = extractSearchQuery(trimmedInput);
       if (query) {
         setInput("");
