@@ -41,7 +41,7 @@ const WebSearchResults = ({
       {isSearching && (
         <div className="px-4 py-8 flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Fetching real-time results...</p>
+          <p className="text-sm text-muted-foreground">Bhote le khojdai cha... 🔎</p>
         </div>
       )}
 
@@ -100,7 +100,7 @@ const WebSearchResults = ({
         <div className="px-4 py-2 border-t border-border bg-secondary/20">
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Real-time results powered by Firecrawl
+            Bhote le internet bata khojeako 🔍
           </p>
         </div>
       )}
