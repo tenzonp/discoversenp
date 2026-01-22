@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Default voice: Roger (natural sounding male voice)
-const DEFAULT_VOICE_ID = "CwhRBWXzGAHq8TQ4Fs17";
+// Sarah - Best for conversational multilingual content (natural, expressive)
+const DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -39,13 +39,13 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_turbo_v2_5", // Fast, high quality
+          model_id: "eleven_multilingual_v2", // Best for Nepali/Hindi/multilingual - natural sounding
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.3,
+            stability: 0.35, // Lower = more expressive & natural
+            similarity_boost: 0.85, // Higher = clearer voice
+            style: 0.45, // Add expressiveness for conversational tone
             use_speaker_boost: true,
-            speed: 1.0,
+            speed: 0.95, // Slightly slower for clarity
           },
         }),
       }
@@ -58,7 +58,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
-    console.log("✅ TTS generated successfully");
+    console.log("✅ TTS generated successfully with multilingual model");
 
     return new Response(audioBuffer, {
       headers: {
