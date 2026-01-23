@@ -15,15 +15,15 @@ import ModeSelector, { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
 import VoiceChatModal from "@/components/chat/VoiceChatModal";
 import WebSearchResults from "@/components/chat/WebSearchResults";
-import { AlertCircle, Mic } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const MAX_MESSAGES = 100;
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
-  friend: { title: "Hey! 👋", subtitle: "K cha bro? Kura gar na!" },
-  professional: { title: "Namaste 🙏", subtitle: "Kasari help garnu?" },
-  exam: { title: "Ready? 📚", subtitle: "Padhai suru garaum" },
-  cultural: { title: "नमस्ते! 🎭", subtitle: "Nepali ma kura garaum" },
+  friend: { title: "Hey", subtitle: "K cha bro?" },
+  professional: { title: "Namaste", subtitle: "Kasari help garnu?" },
+  exam: { title: "Ready?", subtitle: "Padhai suru garaum" },
+  cultural: { title: "नमस्ते", subtitle: "Nepali ma kura garaum" },
 };
 
 const Chat = () => {
@@ -66,7 +66,6 @@ const Chat = () => {
     const state = location.state as { initialMessage?: string } | null;
     if (state?.initialMessage && user && !isLoading) {
       handleSend(state.initialMessage);
-      // Clear the state so it doesn't re-send on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state, user, isLoading]);
@@ -125,7 +124,7 @@ const Chat = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[100dvh] bg-background">
-        <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+        <div className="w-6 h-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -133,30 +132,22 @@ const Chat = () => {
   const greeting = modeGreetings[mode];
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background">
+    <div className={cn("flex flex-col h-[100dvh] bg-background", `vibe-${mode}`)}>
       <ChatHeader 
         onBack={() => navigate("/")} 
         onClear={clearChat}
         onShowHistory={() => setShowHistory(true)}
       />
 
-      {/* Voice Chat Button - Floating */}
-      <button
-        onClick={() => setShowVoiceChat(true)}
-        className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full shadow-elevated gradient-warm flex items-center justify-center interactive"
-      >
-        <Mic className="w-6 h-6 text-white" />
-      </button>
-
-      {/* Mode Selector - Playful */}
-      <div className="px-4 py-3 border-b border-border bg-background/50 backdrop-blur-sm">
+      {/* Mode Selector - Subtle, ambient */}
+      <div className="px-5 py-3 bg-background">
         <ModeSelector currentMode={mode} onModeChange={handleModeChange} />
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto scrollbar-subtle">
         {/* Web Search Results */}
         {(isSearching || searchResults.length > 0) && (
-          <div className="px-4 py-3 max-w-2xl mx-auto">
+          <div className="px-5 py-3 max-w-2xl mx-auto">
             <WebSearchResults 
               results={searchResults}
               query={searchQuery}
@@ -172,10 +163,10 @@ const Chat = () => {
         )}
 
         {messages.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
             {/* Mood Check-in */}
             {user && showMoodCheckin && (
-              <div className="w-full max-w-md mb-8 animate-slide-up">
+              <div className="w-full max-w-md mb-10 animate-appear">
                 <MoodCheckin 
                   userId={user.id} 
                   onComplete={handleMoodComplete}
@@ -184,20 +175,19 @@ const Chat = () => {
               </div>
             )}
             
-            {/* Welcome */}
-            <div className="w-14 h-14 rounded-2xl gradient-warm flex items-center justify-center mb-6 shadow-soft animate-scale-in">
-              <span className="text-xl text-white font-semibold">भ</span>
+            {/* Welcome - Minimal, intimate */}
+            <div className="text-center mb-10 animate-appear delay-100">
+              <h2 className="text-xl font-medium text-foreground mb-1">
+                {greeting.title}
+              </h2>
+              <p className="text-muted-foreground/70 text-sm">
+                {greeting.subtitle}
+              </p>
             </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-2 text-center animate-slide-up delay-75">
-              {greeting.title}
-            </h2>
-            <p className="text-muted-foreground text-center mb-8 max-w-xs animate-slide-up delay-100">
-              {greeting.subtitle}
-            </p>
             <WelcomeScreen onSuggestionClick={(s) => handleSend(s)} />
           </div>
         ) : (
-          <div className="px-4 py-4 space-y-4 max-w-2xl mx-auto">
+          <div className="px-5 py-6 space-y-6 max-w-2xl mx-auto">
             {messages.map((message, index) => (
               <ChatMessage 
                 key={message.id} 
@@ -214,11 +204,10 @@ const Chat = () => {
       </div>
 
       {isLimitReached ? (
-        <div className="p-4 border-t border-border bg-secondary/50">
-          <div className="flex items-center gap-3 max-w-2xl mx-auto text-sm text-muted-foreground">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p>100 message limit. Start fresh!</p>
-          </div>
+        <div className="px-5 py-4 bg-background">
+          <p className="text-sm text-muted-foreground/60 text-center">
+            100 message limit. Start fresh!
+          </p>
         </div>
       ) : (
         <ChatInput onSend={handleSend} isLoading={isLoading} />

@@ -17,10 +17,10 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessa
   const { speak, stop, isSpeaking, isEnabled } = useTextToSpeech();
   const [hasSpoken, setHasSpoken] = useState(false);
 
-  // Delayed appearance for human-like feel
+  // Human-like delayed appearance
   useEffect(() => {
     if (isLatest && !visible) {
-      const timer = setTimeout(() => setVisible(true), isUser ? 50 : 300);
+      const timer = setTimeout(() => setVisible(true), isUser ? 80 : 400);
       return () => clearTimeout(timer);
     }
   }, [isLatest, visible, isUser]);
@@ -64,65 +64,66 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessa
   return (
     <div 
       className={cn(
-        "flex gap-3 group animate-message-in",
+        "flex gap-3 group animate-thought-in",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       <div className={cn(
-        "relative text-[15px] leading-relaxed",
+        "relative",
         isUser
-          ? "chat-bubble-user"
-          : "chat-bubble-assistant",
-        imageUrl && !isUser && "p-2"
+          ? "thought-self"
+          : "thought-other",
+        imageUrl && !isUser && "p-0"
       )}>
         {/* Image */}
         {imageUrl && (
-          <div className={cn(isUser ? "mb-2" : "")}>
+          <div className={cn(isUser ? "mb-2" : "mb-2")}>
             <img 
               src={imageUrl} 
               alt="Generated" 
-              className="max-w-full rounded-2xl max-h-64 object-contain" 
+              className="max-w-full rounded-2xl max-h-72 object-contain" 
               loading="lazy" 
             />
             {isImageOnly && !isUser && (
-              <p className="text-xs text-muted-foreground mt-2 px-2">✨ AI generated</p>
+              <p className="text-xs text-muted-foreground/60 mt-2">✨ AI generated</p>
             )}
           </div>
         )}
 
-        {/* Text */}
+        {/* Text - Feels like thoughts, not messages */}
         {textContent && (
           <p className={cn(
-            "whitespace-pre-wrap break-words",
-            imageUrl && !isUser && "px-2 pb-1"
+            "whitespace-pre-wrap break-words leading-relaxed",
+            isUser ? "text-[15px]" : "text-base",
+            !isUser && "text-foreground"
           )}>
             {textContent}
           </p>
         )}
         
-        {/* Actions - Only for assistant messages */}
+        {/* Actions - Ultra subtle, only on hover */}
         {!isUser && (textContent || imageUrl) && (
-          <div className="absolute -bottom-8 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
             <button
               onClick={handleSpeak}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
               title={isSpeaking ? "Stop" : "Read aloud"}
             >
               {isSpeaking ? (
                 <VolumeX className="w-3.5 h-3.5 text-accent" />
               ) : (
-                <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <Volume2 className="w-3.5 h-3.5 text-muted-foreground/50" />
               )}
             </button>
             <button
               onClick={handleCopy}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
               title="Copy"
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-teal" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                <Copy className="w-3.5 h-3.5 text-muted-foreground/50" />
               )}
             </button>
           </div>

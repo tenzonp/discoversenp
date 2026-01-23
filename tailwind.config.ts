@@ -9,12 +9,12 @@ export default {
       center: true,
       padding: "1.5rem",
       screens: {
-        "2xl": "1200px",
+        "2xl": "1000px", // Narrower for intimate feel
       },
     },
     extend: {
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Instrument Sans', 'Noto Sans', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -68,33 +68,33 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Chat-specific colors
-        chat: {
-          user: "hsl(var(--chat-user))",
-          "user-foreground": "hsl(var(--chat-user-foreground))",
-          assistant: "hsl(var(--chat-assistant))",
-          "assistant-foreground": "hsl(var(--chat-assistant-foreground))",
+        // Thought blocks (replacing chat)
+        thought: {
+          self: "hsl(var(--thought-self))",
+          "self-foreground": "hsl(var(--thought-self-foreground))",
+          other: "hsl(var(--thought-other))",
+          "other-foreground": "hsl(var(--thought-other-foreground))",
         },
-        // Mode colors
-        mode: {
-          friend: "hsl(var(--mode-friend))",
-          professional: "hsl(var(--mode-professional))",
-          exam: "hsl(var(--mode-exam))",
-          cultural: "hsl(var(--mode-cultural))",
+        // Mode vibes
+        vibe: {
+          friend: "hsl(var(--vibe-friend))",
+          professional: "hsl(var(--vibe-professional))",
+          exam: "hsl(var(--vibe-exam))",
+          cultural: "hsl(var(--vibe-cultural))",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 8px)",
+        md: "calc(var(--radius) - 6px)",
+        sm: "calc(var(--radius) - 10px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
         "3xl": "calc(var(--radius) + 16px)",
       },
       boxShadow: {
+        whisper: "var(--shadow-whisper)",
         soft: "var(--shadow-soft)",
-        card: "var(--shadow-card)",
-        elevated: "var(--shadow-elevated)",
+        float: "var(--shadow-float)",
         glow: "var(--shadow-glow)",
       },
       spacing: {
@@ -110,15 +110,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)", opacity: "1" },
           to: { height: "0", opacity: "0" },
         },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
       },
       animation: {
-        "accordion-down": "accordion-down 0.25s ease-out",
-        "accordion-up": "accordion-up 0.25s ease-out",
-        shimmer: "shimmer 2s linear infinite",
+        "accordion-down": "accordion-down 0.3s ease-out",
+        "accordion-up": "accordion-up 0.3s ease-out",
       },
     },
   },

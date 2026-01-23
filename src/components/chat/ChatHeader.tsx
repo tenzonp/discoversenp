@@ -1,5 +1,4 @@
-import { ArrowLeft, MoreVertical, Volume2, VolumeX, Trash2, History } from "lucide-react";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { ArrowLeft, MoreVertical, Trash2, History } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,72 +13,51 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
-  const { isEnabled, toggleEnabled, isSupported } = useTextToSpeech();
-
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur-sm safe-area-top">
+    <header className="flex items-center justify-between px-5 py-4 bg-background safe-area-top">
       {/* Left - Back */}
       <button
         onClick={onBack}
-        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+        className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
         aria-label="Back"
       >
-        <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+        <ArrowLeft className="w-4 h-4 text-muted-foreground/70" />
       </button>
       
-      {/* Center - Avatar & Status */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full gradient-warm flex items-center justify-center shadow-soft">
-          <span className="text-sm text-white font-semibold">भ</span>
+      {/* Center - Minimal identity */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
+          <span className="text-accent text-xs font-medium">भ</span>
         </div>
-        <div>
-          <h1 className="text-base font-semibold text-foreground">Bhote</h1>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-teal animate-breathe" />
-            <span className="text-xs text-muted-foreground">Online</span>
-          </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-teal/70 animate-breathe" />
+          <span className="text-xs text-muted-foreground/60">Online</span>
         </div>
       </div>
 
       {/* Right - Menu */}
-      <div className="flex items-center gap-1">
-        {isSupported && (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <button
-            onClick={toggleEnabled}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-            title={isEnabled ? "Mute voice" : "Enable voice"}
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
+            aria-label="More options"
           >
-            {isEnabled ? (
-              <Volume2 className="w-5 h-5 text-accent" />
-            ) : (
-              <VolumeX className="w-5 h-5 text-muted-foreground" />
-            )}
+            <MoreVertical className="w-4 h-4 text-muted-foreground/50" />
           </button>
-        )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-              aria-label="More options"
-            >
-              <MoreVertical className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 rounded-xl">
-            {onShowHistory && (
-              <DropdownMenuItem onClick={onShowHistory} className="gap-2 py-2.5 rounded-lg">
-                <History className="w-4 h-4" />
-                <span>History</span>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onClear} className="gap-2 py-2.5 rounded-lg text-destructive focus:text-destructive">
-              <Trash2 className="w-4 h-4" />
-              <span>Clear chat</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40 rounded-xl border-border/50">
+          {onShowHistory && (
+            <DropdownMenuItem onClick={onShowHistory} className="gap-2 py-2.5 rounded-lg text-muted-foreground">
+              <History className="w-3.5 h-3.5" />
+              <span className="text-sm">History</span>
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          )}
+          <DropdownMenuItem onClick={onClear} className="gap-2 py-2.5 rounded-lg text-destructive/80 focus:text-destructive">
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="text-sm">Clear</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 };

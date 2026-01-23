@@ -1,10 +1,10 @@
 const TypingIndicator = () => {
   return (
-    <div className="flex justify-start animate-message-in">
-      <div className="chat-bubble-assistant flex items-center gap-1 py-4 px-5">
-        <div className="typing-dot" />
-        <div className="typing-dot" />
-        <div className="typing-dot" />
+    <div className="flex justify-start animate-fade-in">
+      <div className="thought-other flex items-center gap-1.5 py-3">
+        <div className="thinking-dot" />
+        <div className="thinking-dot" />
+        <div className="thinking-dot" />
       </div>
     </div>
   );
