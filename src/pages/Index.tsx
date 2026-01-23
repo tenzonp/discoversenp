@@ -1,100 +1,124 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowRight, Sparkles, Moon, Sun, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Onboarding, useOnboarding } from "@/components/Onboarding";
+import { Moon, Sun, User } from "lucide-react";
 
-const modes = [
-  { icon: MessageCircle, title: "Chat", desc: "Kura gara", route: "/chat" },
-  { icon: Trophy, title: "Progress", desc: "Stats", route: "/progress" },
+// Mood-based prompts - feel like checking in with someone
+const vibes = [
+  { emoji: "😴", label: "Thakeko", prompt: "I'm feeling tired today..." },
+  { emoji: "📚", label: "Padhdai", prompt: "Help me study..." },
+  { emoji: "😄", label: "Khusi", prompt: "Hey! I'm in a good mood today" },
+  { emoji: "🤔", label: "Confused", prompt: "I need help figuring something out" },
+  { emoji: "💬", label: "Kura gara", prompt: "Just want to chat" },
 ];
+
+// Time-based greeting
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return { text: "Subha prabhat", emoji: "🌅" };
+  if (hour < 17) return { text: "Namaste", emoji: "🙏" };
+  if (hour < 21) return { text: "Subha sandhya", emoji: "🌆" };
+  return { text: "Subha ratri", emoji: "🌙" };
+};
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const greeting = getGreeting();
 
   if (showOnboarding) {
     return <Onboarding onComplete={completeOnboarding} />;
   }
 
+  const handleVibeClick = (prompt: string) => {
+    // Navigate to chat with the vibe context
+    navigate("/chat", { state: { initialMessage: prompt } });
+  };
+
   return (
     <main className="min-h-[100dvh] bg-background flex flex-col">
-      {/* Top Bar */}
-      <header className="flex items-center justify-between p-4">
-        <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
-          <span className="text-lg text-primary-foreground font-bold">भ</span>
+      {/* Minimal Top Bar */}
+      <header className="flex items-center justify-between p-5">
+        <div className="w-10 h-10 rounded-2xl gradient-warm flex items-center justify-center shadow-soft">
+          <span className="text-lg text-white font-semibold">भ</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Prominent Dark Mode Toggle */}
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full h-9 px-3 gap-2"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Toggle theme"
           >
             {theme === "dark" ? (
-              <><Sun className="w-4 h-4" /> Light</>
+              <Sun className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <><Moon className="w-4 h-4" /> Dark</>
+              <Moon className="w-5 h-5 text-muted-foreground" />
             )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+          </button>
+          <button
             onClick={() => navigate(user ? "/profile" : "/auth")}
-            className="rounded-full text-sm font-medium"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label={user ? "Profile" : "Login"}
           >
-            {user ? "Profile" : "Login"}
-          </Button>
+            <User className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary mb-6 animate-slide-up">
-          <Sparkles className="w-3.5 h-3.5 text-accent" />
-          <span className="text-xs font-medium">AI for South Asia</span>
+      {/* Hero - Feels like checking in with someone */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
+        {/* Greeting */}
+        <div className="animate-fade-in mb-8 text-center">
+          <span className="text-4xl mb-3 block">{greeting.emoji}</span>
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-2">
+            {greeting.text}
+          </h1>
+          <p className="text-muted-foreground text-base">
+            Aaja k mood cha?
+          </p>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-3 animate-slide-up tracking-tight">
-          Yo <span className="gradient-text">Bhote</span> ho
-        </h1>
-
-        <p className="text-muted-foreground text-center mb-8 max-w-xs text-base animate-slide-up" style={{ animationDelay: "50ms" }}>
-          Tero smart sathi — padhai, exam, daily questions sabai ma help
-        </p>
-
-        <Button 
-          onClick={() => navigate("/chat")}
-          className="animate-slide-up group h-12 px-6 rounded-full bg-foreground text-background hover:bg-foreground/90"
-          style={{ animationDelay: "100ms" }}
-        >
-          Chat suru gara
-          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
-        </Button>
-      </section>
-
-      {/* Modes */}
-      <section className="px-6 pb-8">
-        <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-          {modes.map((mode, index) => (
+        {/* Vibe Selector - Mood-based entry */}
+        <div className="w-full max-w-sm space-y-3 animate-slide-up delay-100">
+          {vibes.map((vibe, index) => (
             <button
-              key={mode.title}
-              onClick={() => navigate(mode.route)}
-              className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-secondary hover:bg-secondary/80 transition-all animate-slide-up"
-              style={{ animationDelay: `${150 + index * 30}ms` }}
+              key={vibe.label}
+              onClick={() => handleVibeClick(vibe.prompt)}
+              className="w-full vibe-card group flex items-center gap-4"
+              style={{ animationDelay: `${100 + index * 50}ms` }}
             >
-              <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center">
-                <mode.icon className="w-5 h-5" />
+              <span className="text-2xl">{vibe.emoji}</span>
+              <div className="text-left flex-1">
+                <span className="text-foreground font-medium text-base group-hover:text-accent transition-colors">
+                  {vibe.label}
+                </span>
               </div>
-              <span className="text-xs font-medium">{mode.title}</span>
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </button>
           ))}
         </div>
+
+        {/* Subtle direct chat option */}
+        <button
+          onClick={() => navigate("/chat")}
+          className="mt-8 text-sm text-muted-foreground hover:text-foreground transition-colors animate-fade-in delay-300"
+        >
+          Seedha chat ma ja →
+        </button>
       </section>
+
+      {/* Footer - Minimal */}
+      <footer className="px-6 pb-6 text-center animate-fade-in delay-300">
+        <p className="text-xs text-muted-foreground/60">
+          Made with ❤️ in Nepal
+        </p>
+      </footer>
     </main>
   );
 };

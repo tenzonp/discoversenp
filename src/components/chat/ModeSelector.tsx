@@ -1,49 +1,52 @@
-import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ChatMode = "friend";
+export type ChatMode = "friend" | "professional" | "exam" | "cultural";
 
 interface ModeSelectorProps {
   currentMode: ChatMode;
   onModeChange: (mode: ChatMode) => void;
 }
 
-const modes = [
-  {
-    id: "friend" as ChatMode,
-    label: "Sathi",
-    icon: Users,
-    description: "Casual chat",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
+const modes: { id: ChatMode; emoji: string; label: string; vibe: string }[] = [
+  { id: "friend", emoji: "😎", label: "Sathi", vibe: "Chill" },
+  { id: "professional", emoji: "💼", label: "Pro", vibe: "Formal" },
+  { id: "exam", emoji: "📚", label: "Exam", vibe: "Focus" },
+  { id: "cultural", emoji: "🎭", label: "Nepali", vibe: "Local" },
 ];
+
+const modeColors: Record<ChatMode, string> = {
+  friend: "bg-accent/10 text-accent border-accent/30",
+  professional: "bg-primary/10 text-primary border-primary/30",
+  exam: "bg-teal/10 text-teal border-teal/30",
+  cultural: "bg-warm/10 text-warm border-warm/30",
+};
 
 const ModeSelector = ({ currentMode, onModeChange }: ModeSelectorProps) => {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {modes.map((mode) => (
-        <button
-          key={mode.id}
-          onClick={() => onModeChange(mode.id)}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200 whitespace-nowrap",
-            currentMode === mode.id
-              ? `${mode.bgColor} border-current ${mode.color}`
-              : "bg-card border-border hover:border-muted-foreground/30"
-          )}
-        >
-          <mode.icon className={cn("w-4 h-4", currentMode === mode.id ? mode.color : "text-muted-foreground")} />
-          <div className="text-left">
-            <p className={cn(
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      {modes.map((mode) => {
+        const isActive = currentMode === mode.id;
+        return (
+          <button
+            key={mode.id}
+            onClick={() => onModeChange(mode.id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all duration-300 whitespace-nowrap",
+              isActive
+                ? cn(modeColors[mode.id], "mode-pill-active")
+                : "bg-card border-border hover:border-muted-foreground/30"
+            )}
+          >
+            <span className="text-base">{mode.emoji}</span>
+            <span className={cn(
               "text-sm font-medium",
-              currentMode === mode.id ? mode.color : "text-foreground"
+              isActive ? "" : "text-foreground"
             )}>
               {mode.label}
-            </p>
-          </div>
-        </button>
-      ))}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 };

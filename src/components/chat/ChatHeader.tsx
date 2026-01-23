@@ -1,13 +1,11 @@
-import { ArrowLeft, MoreVertical, Trash2, History, Volume2, VolumeX } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, MoreVertical, Volume2, VolumeX, Trash2, History } from "lucide-react";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface ChatHeaderProps {
   onBack: () => void;
@@ -16,71 +14,68 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
-  const { isEnabled, isSupported, toggleEnabled } = useTextToSpeech();
+  const { isEnabled, toggleEnabled, isSupported } = useTextToSpeech();
 
   return (
-    <header className="sticky top-0 z-50 px-3 py-3 border-b border-border bg-background/80 backdrop-blur-xl safe-area-top">
-      <div className="flex items-center gap-3 max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="h-9 w-9 rounded-full"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-
-        <div className="flex items-center gap-3 flex-1">
-          <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center">
-            <span className="text-sm text-primary-foreground font-bold">भ</span>
-          </div>
-          <div>
-            <h1 className="font-semibold text-sm">Bhote</h1>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <p className="text-xs text-muted-foreground">Online</p>
-            </div>
+    <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-background/80 backdrop-blur-sm safe-area-top">
+      {/* Left - Back */}
+      <button
+        onClick={onBack}
+        className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+        aria-label="Back"
+      >
+        <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+      </button>
+      
+      {/* Center - Avatar & Status */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full gradient-warm flex items-center justify-center shadow-soft">
+          <span className="text-sm text-white font-semibold">भ</span>
+        </div>
+        <div>
+          <h1 className="text-base font-semibold text-foreground">Bhote</h1>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-teal animate-breathe" />
+            <span className="text-xs text-muted-foreground">Online</span>
           </div>
         </div>
+      </div>
 
+      {/* Right - Menu */}
+      <div className="flex items-center gap-1">
         {isSupported && (
-          <Button
-            variant={isEnabled ? "default" : "ghost"}
-            size="icon"
+          <button
             onClick={toggleEnabled}
-            className="h-9 w-9 rounded-full"
-            title={isEnabled ? "Turn off voice" : "Turn on voice"}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            title={isEnabled ? "Mute voice" : "Enable voice"}
           >
-            {isEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </Button>
+            {isEnabled ? (
+              <Volume2 className="w-5 h-5 text-accent" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
         )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-              <MoreVertical className="w-5 h-5" />
-            </Button>
+            <button
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+              aria-label="More options"
+            >
+              <MoreVertical className="w-5 h-5 text-muted-foreground" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuContent align="end" className="w-44 rounded-xl">
             {onShowHistory && (
-              <DropdownMenuItem onClick={onShowHistory}>
-                <History className="w-4 h-4 mr-2" />
-                History
+              <DropdownMenuItem onClick={onShowHistory} className="gap-2 py-2.5 rounded-lg">
+                <History className="w-4 h-4" />
+                <span>History</span>
               </DropdownMenuItem>
             )}
-            {isSupported && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={toggleEnabled}>
-                  {isEnabled ? <VolumeX className="w-4 h-4 mr-2" /> : <Volume2 className="w-4 h-4 mr-2" />}
-                  {isEnabled ? "Disable Voice" : "Enable Voice"}
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onClear} className="text-destructive focus:text-destructive">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear
+            <DropdownMenuItem onClick={onClear} className="gap-2 py-2.5 rounded-lg text-destructive focus:text-destructive">
+              <Trash2 className="w-4 h-4" />
+              <span>Clear chat</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

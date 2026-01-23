@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, MicOff, Image, X, Loader2, Sparkles, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Send, Mic, MicOff, Image, X, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,15 +16,14 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("en-US");
+  const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("ne-NP");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { isGenerating, remaining, generateImage, checkRemaining } = useImageGeneration();
+  const { isGenerating, remaining, checkRemaining } = useImageGeneration();
 
   const { 
     isListening, 
-    transcript, 
     isSupported: voiceSupported, 
     toggleListening,
   } = useVoiceInput({
@@ -38,15 +36,15 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   useEffect(() => { checkRemaining(); }, [checkRemaining]);
 
+  // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 100) + "px";
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
     }
   }, [input]);
 
-  // Check if input is an image generation request
   const isImageRequest = (text: string) => {
     const triggers = [
       /^generate\s+/i, /^create\s+/i, /^draw\s+/i, /^make\s+/i,
@@ -62,7 +60,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                .trim();
   };
 
-  // Check if input is an explicit web search request (with trigger words)
   const isExplicitWebSearchRequest = (text: string) => {
     const triggers = [
       /^search\s+/i, /^google\s+/i, /^find\s+/i, /^lookup\s+/i, /^look up\s+/i,
@@ -72,7 +69,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   };
 
   const extractSearchQuery = (text: string) => {
-    // Remove explicit trigger words if present
     return text.replace(/^(search|google|find|lookup|look up|khoja|khoj)\s+(for\s+)?/i, "")
                .replace(/\s*(web|internet)\s*search\s*/i, " ")
                .trim();
@@ -126,7 +122,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
     const trimmedInput = input.trim();
 
-    // Check if this is an explicit web search request
     if (isExplicitWebSearchRequest(trimmedInput)) {
       const query = extractSearchQuery(trimmedInput);
       if (query) {
@@ -136,12 +131,10 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
       }
     }
 
-    // Check if this is an image generation request
     if (isImageRequest(trimmedInput) && remaining && remaining > 0) {
       const prompt = extractImagePrompt(trimmedInput);
       if (prompt) {
         setInput("");
-        // Send the user message first, with flag to trigger image generation
         onSend(trimmedInput, undefined, prompt);
         return;
       }
@@ -157,6 +150,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     onSend(trimmedInput, imageUrl);
     setInput("");
     removeImage();
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -166,70 +160,95 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   };
 
+  const canSend = (input.trim() || selectedImage) && !isLoading && !isUploading && !isGenerating;
+
   return (
-    <div className="p-3 border-t border-border bg-background safe-area-bottom">
+    <div className="border-t border-border bg-background/80 backdrop-blur-sm px-4 py-3 safe-area-bottom">
+      {/* Image Preview */}
       {imagePreview && (
-        <div className="max-w-2xl mx-auto mb-2">
-          <div className="relative inline-block">
-            <img src={imagePreview} alt="Preview" className="h-16 rounded-lg border border-border" />
-            <button onClick={removeImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-foreground text-background rounded-full flex items-center justify-center">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
+        <div className="mb-3 relative inline-block">
+          <img src={imagePreview} alt="Selected" className="max-h-24 rounded-xl object-cover" />
+          <button
+            onClick={removeImage}
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center shadow-soft"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
       <div className="flex items-end gap-2 max-w-2xl mx-auto">
+        {/* Image Upload */}
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-        
-        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isUploading} className="h-10 w-10 rounded-full flex-shrink-0">
-          <Image className="w-5 h-5" />
-        </Button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+          disabled={isLoading}
+        >
+          <Image className="w-5 h-5 text-muted-foreground" />
+        </button>
 
+        {/* Voice Input */}
         {voiceSupported && (
-          <Button
-            variant={isListening ? "default" : "ghost"}
-            size="icon"
+          <button
             onClick={toggleListening}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
+              isListening ? "gradient-warm text-white" : "hover:bg-muted"
+            )}
             disabled={isLoading}
-            className={cn("h-10 w-10 rounded-full flex-shrink-0", isListening && "bg-red-500 hover:bg-red-600")}
           >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
+            {isListening ? <Mic className="w-5 h-5 animate-pulse" /> : <MicOff className="w-5 h-5 text-muted-foreground" />}
+          </button>
         )}
 
+        {/* Text Input */}
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Sunirako..." : "Message lekha... (\"search\" for web, \"draw\" for images)"}
+            placeholder={isListening ? "Sunirako..." : "Lekhnus..."}
             rows={1}
             className={cn(
-              "w-full px-4 py-2.5 rounded-2xl bg-secondary border-0 text-sm resize-none placeholder:text-muted-foreground",
-              "focus:outline-none focus:ring-1 focus:ring-foreground/20",
-              isListening && "ring-1 ring-red-500"
+              "w-full resize-none bg-secondary rounded-2xl px-4 py-3 pr-12",
+              "text-foreground placeholder:text-muted-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-accent/20",
+              "transition-all duration-200",
+              "text-[15px] leading-relaxed",
+              isListening && "ring-2 ring-accent/30"
             )}
             disabled={isLoading}
           />
-          {remaining !== null && remaining > 0 && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground">
-              <Sparkles className="w-3 h-3" />
-              {remaining}
-            </div>
-          )}
-        </div>
 
-        <Button
-          onClick={handleSubmit}
-          disabled={(!input.trim() && !selectedImage) || isLoading || isUploading || isGenerating}
-          className="h-10 w-10 rounded-full flex-shrink-0 bg-foreground text-background hover:bg-foreground/90"
-          size="icon"
-        >
-          {isUploading || isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </Button>
+          {/* Send Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!canSend}
+            className={cn(
+              "absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
+              canSend
+                ? "gradient-warm text-white shadow-soft scale-100"
+                : "bg-muted text-muted-foreground scale-95"
+            )}
+          >
+            {isUploading || isGenerating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Credits indicator - subtle */}
+      {remaining !== null && remaining < 5 && remaining > 0 && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground max-w-2xl mx-auto">
+          <Sparkles className="w-3 h-3" />
+          <span>{remaining} image credits</span>
+        </div>
+      )}
     </div>
   );
 };

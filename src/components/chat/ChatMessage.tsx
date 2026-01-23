@@ -7,28 +7,37 @@ import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 interface ChatMessageProps {
   message: Message;
   autoSpeak?: boolean;
+  isLatest?: boolean;
 }
 
-const ChatMessage = ({ message, autoSpeak = false }: ChatMessageProps) => {
+const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessageProps) => {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState(!isLatest);
   const { speak, stop, isSpeaking, isEnabled } = useTextToSpeech();
   const [hasSpoken, setHasSpoken] = useState(false);
+
+  // Delayed appearance for human-like feel
+  useEffect(() => {
+    if (isLatest && !visible) {
+      const timer = setTimeout(() => setVisible(true), isUser ? 50 : 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLatest, visible, isUser]);
 
   // Extract image URL and clean text
   const imageMatch = message.content.match(/\[(?:Generated )?Image: (https?:\/\/[^\]]+)\]/);
   const imageUrl = imageMatch?.[1] || message.imageUrl;
   
-  // Clean the text content - remove image markers and prefixes
+  // Clean the text content
   let textContent = message.content
     .replace(/\[(?:Generated )?Image: https?:\/\/[^\]]+\]\n*/g, "")
     .replace(/^Generated: ?"[^"]*"\s*/i, "")
     .trim();
 
-  // If it's just a generated image message with no other text, show a nice label
   const isImageOnly = imageUrl && !textContent;
 
-  // Auto-speak assistant messages when enabled
+  // Auto-speak
   useEffect(() => {
     if (autoSpeak && !isUser && isEnabled && textContent && !hasSpoken) {
       speak(textContent);
@@ -50,50 +59,71 @@ const ChatMessage = ({ message, autoSpeak = false }: ChatMessageProps) => {
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <div className={cn("flex gap-2 group", isUser ? "justify-end" : "justify-start")}>
+    <div 
+      className={cn(
+        "flex gap-3 group animate-message-in",
+        isUser ? "justify-end" : "justify-start"
+      )}
+    >
       <div className={cn(
-        "max-w-[85%] text-sm leading-relaxed relative",
+        "relative text-[15px] leading-relaxed",
         isUser
-          ? "bg-foreground text-background rounded-2xl rounded-br-md px-4 py-2.5"
-          : "bg-secondary text-foreground rounded-2xl rounded-bl-md",
-        imageUrl && !isUser && "p-2",
-        !imageUrl && !isUser && "px-4 py-2.5"
+          ? "chat-bubble-user"
+          : "chat-bubble-assistant",
+        imageUrl && !isUser && "p-2"
       )}>
+        {/* Image */}
         {imageUrl && (
           <div className={cn(isUser ? "mb-2" : "")}>
             <img 
               src={imageUrl} 
               alt="Generated" 
-              className="max-w-full rounded-xl max-h-64 object-contain" 
+              className="max-w-full rounded-2xl max-h-64 object-contain" 
               loading="lazy" 
             />
             {isImageOnly && !isUser && (
-              <p className="text-xs text-muted-foreground mt-2 px-2">✨ AI generated image</p>
+              <p className="text-xs text-muted-foreground mt-2 px-2">✨ AI generated</p>
             )}
           </div>
         )}
-        {textContent && <p className={cn("whitespace-pre-wrap break-words", imageUrl && !isUser && "px-2 pb-1")}>{textContent}</p>}
+
+        {/* Text */}
+        {textContent && (
+          <p className={cn(
+            "whitespace-pre-wrap break-words",
+            imageUrl && !isUser && "px-2 pb-1"
+          )}>
+            {textContent}
+          </p>
+        )}
         
+        {/* Actions - Only for assistant messages */}
         {!isUser && (textContent || imageUrl) && (
-          <div className="absolute -bottom-6 left-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute -bottom-8 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
             <button
               onClick={handleSpeak}
-              className="p-1 rounded hover:bg-secondary"
-              title={isSpeaking ? "Stop speaking" : "Read aloud"}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              title={isSpeaking ? "Stop" : "Read aloud"}
             >
               {isSpeaking ? (
-                <VolumeX className="w-3.5 h-3.5 text-primary" />
+                <VolumeX className="w-3.5 h-3.5 text-accent" />
               ) : (
                 <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
               )}
             </button>
             <button
               onClick={handleCopy}
-              className="p-1 rounded hover:bg-secondary"
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
               title="Copy"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5 text-muted-foreground" />}
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-teal" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
             </button>
           </div>
         )}
