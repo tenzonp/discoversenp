@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, MicOff, Image, X, Loader2, Sparkles } from "lucide-react";
+import { Send, Image, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<"ne-NP" | "en-US">("ne-NP");
+  const [voiceLang] = useState<"ne-NP" | "en-US">("ne-NP");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -24,7 +24,6 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   const { 
     isListening, 
-    isSupported: voiceSupported, 
     toggleListening,
   } = useVoiceInput({
     language: voiceLang,
@@ -41,7 +40,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+      textarea.style.height = Math.min(textarea.scrollHeight, 140) + "px";
     }
   }, [input]);
 
@@ -78,7 +77,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: "File dherai thulo", description: "5MB bhanda sano file use gara", variant: "destructive" });
+        toast({ title: "File dherai thulo", description: "5MB bhanda sano", variant: "destructive" });
         return;
       }
       setSelectedImage(file);
@@ -110,7 +109,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
       const { data: { publicUrl } } = supabase.storage.from("chat-images").getPublicUrl(fileName);
       return publicUrl;
     } catch {
-      toast({ title: "Upload fail bhayo", variant: "destructive" });
+      toast({ title: "Upload fail", variant: "destructive" });
       return null;
     } finally {
       setIsUploading(false);
@@ -163,46 +162,32 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const canSend = (input.trim() || selectedImage) && !isLoading && !isUploading && !isGenerating;
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur-sm px-4 py-3 safe-area-bottom">
+    <div className="bg-background px-4 py-4 safe-area-bottom">
       {/* Image Preview */}
       {imagePreview && (
         <div className="mb-3 relative inline-block">
-          <img src={imagePreview} alt="Selected" className="max-h-24 rounded-xl object-cover" />
+          <img src={imagePreview} alt="Selected" className="max-h-20 rounded-xl object-cover" />
           <button
             onClick={removeImage}
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center shadow-soft"
+            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center shadow-soft"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3 h-3" />
           </button>
         </div>
       )}
 
-      <div className="flex items-end gap-2 max-w-2xl mx-auto">
-        {/* Image Upload */}
+      <div className="flex items-end gap-3 max-w-2xl mx-auto">
+        {/* Image Upload - Subtle */}
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300 flex-shrink-0 mb-0.5"
           disabled={isLoading}
         >
-          <Image className="w-5 h-5 text-muted-foreground" />
+          <Image className="w-4 h-4 text-muted-foreground/50" />
         </button>
 
-        {/* Voice Input */}
-        {voiceSupported && (
-          <button
-            onClick={toggleListening}
-            className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-              isListening ? "gradient-warm text-white" : "hover:bg-muted"
-            )}
-            disabled={isLoading}
-          >
-            {isListening ? <Mic className="w-5 h-5 animate-pulse" /> : <MicOff className="w-5 h-5 text-muted-foreground" />}
-          </button>
-        )}
-
-        {/* Text Input */}
+        {/* Text Input - Clean, minimal, no borders */}
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
@@ -212,43 +197,35 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             placeholder={isListening ? "Sunirako..." : "Lekhnus..."}
             rows={1}
             className={cn(
-              "w-full resize-none bg-secondary rounded-2xl px-4 py-3 pr-12",
-              "text-foreground placeholder:text-muted-foreground",
-              "focus:outline-none focus:ring-2 focus:ring-accent/20",
-              "transition-all duration-200",
+              "w-full resize-none bg-secondary/60 rounded-2xl px-4 py-3 pr-12",
+              "text-foreground placeholder:text-muted-foreground/50",
+              "focus:outline-none focus:bg-secondary",
+              "transition-all duration-300",
               "text-[15px] leading-relaxed",
-              isListening && "ring-2 ring-accent/30"
+              isListening && "bg-accent/5"
             )}
             disabled={isLoading}
           />
 
-          {/* Send Button */}
+          {/* Send Button - Minimal, appears on content */}
           <button
             onClick={handleSubmit}
             disabled={!canSend}
             className={cn(
-              "absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
+              "absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
               canSend
-                ? "gradient-warm text-white shadow-soft scale-100"
-                : "bg-muted text-muted-foreground scale-95"
+                ? "bg-foreground text-background scale-100"
+                : "bg-transparent text-muted-foreground/30 scale-95"
             )}
           >
             {isUploading || isGenerating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
       </div>
-
-      {/* Credits indicator - subtle */}
-      {remaining !== null && remaining < 5 && remaining > 0 && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground max-w-2xl mx-auto">
-          <Sparkles className="w-3 h-3" />
-          <span>{remaining} image credits</span>
-        </div>
-      )}
     </div>
   );
 };

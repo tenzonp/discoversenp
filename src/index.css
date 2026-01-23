@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Noto+Sans:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,162 +7,162 @@
 @layer base {
   :root {
     /* ══════════════════════════════════════════════════════════════════
-       🇳🇵 BHOTE DESIGN SYSTEM - Nepal-Inspired, Human, Premium
+       🇳🇵 BHOTE — A Living Nepali Personality
+       ══════════════════════════════════════════════════════════════════
+       Philosophy: Calm, breathable, premium, emotionally human
+       NOT: AI tool, chatbot, productivity app, corporate
        ══════════════════════════════════════════════════════════════════ */
     
-    /* Background - Warm Ivory (not harsh white) */
-    --background: 40 30% 98%;
-    --foreground: 220 15% 20%;
+    /* Background - Warm Cream / Ivory (feels like paper, not screen) */
+    --background: 42 40% 97%;
+    --foreground: 25 20% 18%;
 
-    /* Card - Slightly warmer than background */
-    --card: 40 25% 97%;
-    --card-foreground: 220 15% 20%;
+    /* Card - Subtle warmth */
+    --card: 40 35% 95%;
+    --card-foreground: 25 20% 18%;
 
     /* Popover */
-    --popover: 40 25% 97%;
-    --popover-foreground: 220 15% 20%;
+    --popover: 40 35% 96%;
+    --popover-foreground: 25 20% 18%;
 
-    /* Primary - Deep Charcoal Slate (readable, not harsh black) */
-    --primary: 220 15% 20%;
-    --primary-foreground: 40 30% 98%;
+    /* Primary - Deep warm charcoal (readable, inviting) */
+    --primary: 25 20% 18%;
+    --primary-foreground: 42 40% 97%;
 
-    /* Secondary - Soft Warm Gray */
-    --secondary: 30 10% 94%;
-    --secondary-foreground: 220 15% 25%;
+    /* Secondary - Soft warm beige */
+    --secondary: 35 25% 92%;
+    --secondary-foreground: 25 18% 25%;
 
-    /* Muted - Gentle gray for subtle elements */
-    --muted: 30 8% 92%;
-    --muted-foreground: 220 8% 50%;
+    /* Muted - Gentle warmth */
+    --muted: 35 20% 90%;
+    --muted-foreground: 25 12% 48%;
 
-    /* Accent - Muted Terracotta Red (Nepal flag inspired) */
-    --accent: 8 65% 55%;
-    --accent-foreground: 40 30% 98%;
+    /* Accent - Muted Terracotta (Nepal flag inspired, earthy) */
+    --accent: 12 55% 48%;
+    --accent-foreground: 42 40% 97%;
 
-    /* Warm Teal - Secondary accent for calm states */
-    --teal: 175 35% 45%;
-    --teal-foreground: 40 30% 98%;
+    /* Teal - Calm, grounded (for exam/focus mode) */
+    --teal: 172 30% 42%;
+    --teal-foreground: 42 40% 97%;
 
-    /* Earthy Orange - Warm accent */
-    --warm: 28 75% 55%;
-    --warm-foreground: 40 30% 98%;
+    /* Warm - Earthy orange (for cultural warmth) */
+    --warm: 28 60% 50%;
+    --warm-foreground: 42 40% 97%;
 
     /* Destructive */
-    --destructive: 0 60% 50%;
-    --destructive-foreground: 40 30% 98%;
+    --destructive: 0 55% 48%;
+    --destructive-foreground: 42 40% 97%;
 
-    /* Borders & Inputs - Subtle, warm */
-    --border: 30 15% 88%;
-    --input: 30 15% 90%;
-    --ring: 8 65% 55%;
+    /* Borders & Inputs - Nearly invisible, warm */
+    --border: 35 20% 88%;
+    --input: 35 20% 92%;
+    --ring: 12 55% 48%;
 
-    /* Generous radius for softness */
-    --radius: 1.25rem;
+    /* Generous, soft radius */
+    --radius: 1.5rem;
 
     /* ══════════════════════════════════════════════════════════════════
-       Custom Tokens
+       Custom Tokens - Human, not mechanical
        ══════════════════════════════════════════════════════════════════ */
     
-    /* Shadows - Soft, diffused, warm */
-    --shadow-soft: 0 2px 12px -3px hsl(30 20% 20% / 0.06);
-    --shadow-card: 0 4px 20px -6px hsl(30 20% 20% / 0.08);
-    --shadow-elevated: 0 8px 32px -8px hsl(30 20% 20% / 0.12);
-    --shadow-glow: 0 0 24px -4px hsl(8 65% 55% / 0.2);
+    /* Shadows - Diffused, warm, barely there */
+    --shadow-whisper: 0 1px 3px -1px hsl(25 30% 30% / 0.04);
+    --shadow-soft: 0 4px 16px -4px hsl(25 30% 30% / 0.06);
+    --shadow-float: 0 8px 32px -8px hsl(25 30% 30% / 0.08);
+    --shadow-glow: 0 0 32px -8px hsl(12 55% 48% / 0.15);
 
-    /* Gradients - Subtle, not flashy */
-    --gradient-warm: linear-gradient(135deg, hsl(8 65% 55%) 0%, hsl(28 75% 55%) 100%);
-    --gradient-calm: linear-gradient(135deg, hsl(175 35% 45%) 0%, hsl(190 40% 50%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(40 30% 98%) 0%, hsl(30 20% 95%) 100%);
+    /* No gradients - Flat, calm, intentional */
 
-    /* Chat-specific */
-    --chat-user: 220 15% 22%;
-    --chat-user-foreground: 40 30% 98%;
-    --chat-assistant: 30 12% 93%;
-    --chat-assistant-foreground: 220 15% 20%;
+    /* Thought blocks (NOT chat bubbles) */
+    --thought-self: 25 18% 20%;
+    --thought-self-foreground: 42 40% 97%;
+    --thought-other: transparent;
+    --thought-other-foreground: 25 20% 18%;
 
-    /* Mode colors - Subtle variations */
-    --mode-friend: 8 65% 55%;
-    --mode-professional: 220 15% 35%;
-    --mode-exam: 175 35% 45%;
-    --mode-cultural: 28 75% 55%;
+    /* Mode vibes - Subtle ambient shifts */
+    --vibe-friend: 12 55% 48%;
+    --vibe-professional: 220 12% 35%;
+    --vibe-exam: 172 30% 42%;
+    --vibe-cultural: 28 60% 50%;
 
     /* Sidebar */
-    --sidebar-background: 40 25% 97%;
-    --sidebar-foreground: 220 15% 20%;
-    --sidebar-primary: 220 15% 20%;
-    --sidebar-primary-foreground: 40 30% 98%;
-    --sidebar-accent: 30 10% 92%;
-    --sidebar-accent-foreground: 220 15% 25%;
-    --sidebar-border: 30 15% 88%;
-    --sidebar-ring: 8 65% 55%;
+    --sidebar-background: 40 35% 95%;
+    --sidebar-foreground: 25 20% 18%;
+    --sidebar-primary: 25 20% 18%;
+    --sidebar-primary-foreground: 42 40% 97%;
+    --sidebar-accent: 35 25% 92%;
+    --sidebar-accent-foreground: 25 18% 25%;
+    --sidebar-border: 35 20% 88%;
+    --sidebar-ring: 12 55% 48%;
   }
 
   .dark {
-    /* Background - Deep warm charcoal */
-    --background: 220 15% 8%;
-    --foreground: 40 15% 92%;
+    /* Background - Deep warm espresso */
+    --background: 25 18% 7%;
+    --foreground: 40 20% 90%;
 
     /* Card - Slightly elevated */
-    --card: 220 12% 11%;
-    --card-foreground: 40 15% 92%;
+    --card: 25 15% 10%;
+    --card-foreground: 40 20% 90%;
 
     /* Popover */
-    --popover: 220 12% 11%;
-    --popover-foreground: 40 15% 92%;
+    --popover: 25 15% 10%;
+    --popover-foreground: 40 20% 90%;
 
-    /* Primary - Warm off-white */
-    --primary: 40 15% 92%;
-    --primary-foreground: 220 15% 10%;
+    /* Primary - Warm cream */
+    --primary: 40 20% 90%;
+    --primary-foreground: 25 18% 8%;
 
     /* Secondary */
-    --secondary: 220 10% 15%;
-    --secondary-foreground: 40 12% 85%;
+    --secondary: 25 12% 14%;
+    --secondary-foreground: 40 15% 80%;
 
     /* Muted */
-    --muted: 220 10% 18%;
-    --muted-foreground: 40 8% 55%;
+    --muted: 25 12% 16%;
+    --muted-foreground: 40 10% 50%;
 
-    /* Accent stays vibrant */
-    --accent: 8 70% 58%;
-    --accent-foreground: 40 30% 98%;
+    /* Accent - Warmer in dark */
+    --accent: 12 60% 55%;
+    --accent-foreground: 42 40% 97%;
 
     /* Teal in dark */
-    --teal: 175 40% 50%;
-    --teal-foreground: 220 15% 8%;
+    --teal: 172 35% 50%;
+    --teal-foreground: 25 18% 8%;
 
     /* Warm in dark */
-    --warm: 28 80% 58%;
-    --warm-foreground: 220 15% 8%;
+    --warm: 28 65% 55%;
+    --warm-foreground: 25 18% 8%;
 
     /* Destructive */
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 40 30% 98%;
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 42 40% 97%;
 
     /* Borders */
-    --border: 220 10% 18%;
-    --input: 220 10% 18%;
-    --ring: 8 70% 58%;
+    --border: 25 12% 16%;
+    --input: 25 12% 16%;
+    --ring: 12 60% 55%;
 
-    /* Shadows in dark - more prominent */
-    --shadow-soft: 0 2px 12px -3px hsl(0 0% 0% / 0.3);
-    --shadow-card: 0 4px 20px -6px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 24px -4px hsl(8 70% 58% / 0.3);
+    /* Shadows in dark */
+    --shadow-whisper: 0 1px 3px -1px hsl(0 0% 0% / 0.2);
+    --shadow-soft: 0 4px 16px -4px hsl(0 0% 0% / 0.3);
+    --shadow-float: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 32px -8px hsl(12 60% 55% / 0.25);
 
-    /* Chat in dark */
-    --chat-user: 8 70% 58%;
-    --chat-user-foreground: 40 30% 98%;
-    --chat-assistant: 220 10% 14%;
-    --chat-assistant-foreground: 40 15% 90%;
+    /* Thought blocks dark */
+    --thought-self: 12 60% 55%;
+    --thought-self-foreground: 42 40% 97%;
+    --thought-other: transparent;
+    --thought-other-foreground: 40 20% 90%;
 
     /* Sidebar dark */
-    --sidebar-background: 220 12% 11%;
-    --sidebar-foreground: 40 15% 92%;
-    --sidebar-primary: 40 15% 92%;
-    --sidebar-primary-foreground: 220 15% 10%;
-    --sidebar-accent: 220 10% 15%;
-    --sidebar-accent-foreground: 40 12% 85%;
-    --sidebar-border: 220 10% 18%;
-    --sidebar-ring: 8 70% 58%;
+    --sidebar-background: 25 15% 10%;
+    --sidebar-foreground: 40 20% 90%;
+    --sidebar-primary: 40 20% 90%;
+    --sidebar-primary-foreground: 25 18% 8%;
+    --sidebar-accent: 25 12% 14%;
+    --sidebar-accent-foreground: 40 15% 80%;
+    --sidebar-border: 25 12% 16%;
+    --sidebar-ring: 12 60% 55%;
   }
 }
 
@@ -179,11 +179,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Instrument Sans', 'Noto Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
-    line-height: 1.6;
-    letter-spacing: -0.01em;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
   }
 
   .safe-area-top {
@@ -194,178 +194,160 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Typography - Friendly, readable for Romanized Nepali */
+  /* Typography - Warm, friendly, perfect for Romanized Nepali */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    letter-spacing: -0.025em;
-    font-weight: 600;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 500;
   }
 
-  h1 { @apply text-3xl md:text-4xl; }
-  h2 { @apply text-2xl md:text-3xl; }
-  h3 { @apply text-xl md:text-2xl; }
+  h1 { @apply text-2xl md:text-3xl; font-weight: 500; }
+  h2 { @apply text-xl md:text-2xl; }
+  h3 { @apply text-lg md:text-xl; }
 
   /* Selection */
   ::selection {
-    background: hsl(var(--accent) / 0.2);
+    background: hsl(var(--accent) / 0.15);
     color: hsl(var(--foreground));
   }
 }
 
 @layer components {
   /* ══════════════════════════════════════════════════════════════════
-     Gradient utilities
+     SURFACES - Soft, warm, intentional
      ══════════════════════════════════════════════════════════════════ */
-  .gradient-text {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-warm);
+  .surface-base {
+    @apply bg-background;
   }
 
-  .gradient-warm {
-    background-image: var(--gradient-warm);
+  .surface-raised {
+    @apply bg-card;
+    box-shadow: var(--shadow-whisper);
   }
 
-  .gradient-calm {
-    background-image: var(--gradient-calm);
-  }
-
-  .gradient-subtle {
-    background-image: var(--gradient-subtle);
+  .surface-floating {
+    @apply bg-card rounded-3xl;
+    box-shadow: var(--shadow-float);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     Card & Surface utilities
+     THOUGHT BLOCKS - NOT chat bubbles. Thoughts. Feelings. Words.
      ══════════════════════════════════════════════════════════════════ */
-  .card-soft {
-    @apply bg-card rounded-2xl border border-border;
+  .thought-self {
+    @apply px-5 py-3.5 rounded-[1.75rem] rounded-br-lg;
+    background: hsl(var(--thought-self));
+    color: hsl(var(--thought-self-foreground));
+    max-width: 80%;
     box-shadow: var(--shadow-soft);
   }
 
-  .card-elevated {
-    @apply bg-card rounded-2xl border border-border;
-    box-shadow: var(--shadow-card);
+  .thought-other {
+    @apply px-0 py-2;
+    background: hsl(var(--thought-other));
+    color: hsl(var(--thought-other-foreground));
+    max-width: 90%;
   }
 
-  .card-floating {
-    @apply bg-card rounded-3xl border border-border;
-    box-shadow: var(--shadow-elevated);
+  /* Playful thought - slight tilt for roasts/fun */
+  .thought-playful {
+    transform: rotate(-0.5deg);
+    transition: transform 0.3s ease;
   }
 
-  .surface-warm {
-    @apply bg-secondary/50 backdrop-blur-sm;
-  }
-
-  /* ══════════════════════════════════════════════════════════════════
-     Chat Bubbles - Soft, pill-like, human
-     ══════════════════════════════════════════════════════════════════ */
-  .chat-bubble-user {
-    @apply px-4 py-3 rounded-[1.5rem] rounded-br-lg;
-    background: hsl(var(--chat-user));
-    color: hsl(var(--chat-user-foreground));
-    max-width: 85%;
-  }
-
-  .chat-bubble-assistant {
-    @apply px-4 py-3 rounded-[1.5rem] rounded-bl-lg;
-    background: hsl(var(--chat-assistant));
-    color: hsl(var(--chat-assistant-foreground));
-    max-width: 85%;
+  .thought-playful:hover {
+    transform: rotate(0deg);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     Mode Pills - Playful, tactile
-     ══════════════════════════════════════════════════════════════════ */
-  .mode-pill {
-    @apply px-4 py-2.5 rounded-full font-medium text-sm transition-all duration-300;
-    @apply border-2 border-transparent;
-  }
-
-  .mode-pill-active {
-    @apply scale-[1.02];
-    box-shadow: var(--shadow-soft);
-  }
-
-  .mode-friend {
-    --mode-color: var(--mode-friend);
-  }
-
-  .mode-professional {
-    --mode-color: var(--mode-professional);
-  }
-
-  .mode-exam {
-    --mode-color: var(--mode-exam);
-  }
-
-  .mode-cultural {
-    --mode-color: var(--mode-cultural);
-  }
-
-  /* ══════════════════════════════════════════════════════════════════
-     Interaction states
-     ══════════════════════════════════════════════════════════════════ */
-  .interactive {
-    @apply transition-all duration-200;
-    @apply hover:scale-[1.02] active:scale-[0.98];
-  }
-
-  .interactive-subtle {
-    @apply transition-all duration-200;
-    @apply hover:bg-muted/50 active:bg-muted;
-  }
-
-  /* ══════════════════════════════════════════════════════════════════
-     Typing indicator
-     ══════════════════════════════════════════════════════════════════ */
-  .typing-dot {
-    @apply w-2 h-2 rounded-full bg-muted-foreground/60;
-    animation: typing-pulse 1.4s ease-in-out infinite;
-  }
-
-  .typing-dot:nth-child(1) { animation-delay: 0ms; }
-  .typing-dot:nth-child(2) { animation-delay: 200ms; }
-  .typing-dot:nth-child(3) { animation-delay: 400ms; }
-
-  @keyframes typing-pulse {
-    0%, 60%, 100% { 
-      transform: translateY(0);
-      opacity: 0.4;
-    }
-    30% { 
-      transform: translateY(-4px);
-      opacity: 1;
-    }
-  }
-
-  /* ══════════════════════════════════════════════════════════════════
-     Mood/Vibe selectors
+     VIBE CARDS - Mood-based entry, not buttons
      ══════════════════════════════════════════════════════════════════ */
   .vibe-card {
-    @apply p-4 rounded-2xl border border-border bg-card;
-    @apply transition-all duration-300 cursor-pointer;
-    @apply hover:border-accent/30 hover:shadow-soft;
+    @apply p-5 rounded-2xl border border-transparent;
+    @apply transition-all duration-500 cursor-pointer;
+    @apply hover:bg-card;
+    box-shadow: none;
+  }
+
+  .vibe-card:hover {
+    box-shadow: var(--shadow-soft);
+    border-color: hsl(var(--border));
   }
 
   .vibe-card-active {
-    @apply border-accent bg-accent/5;
+    @apply bg-card;
+    border-color: hsl(var(--accent) / 0.3);
     box-shadow: var(--shadow-glow);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     Empty states - Intentional, aesthetic
+     MODE VIBES - Ambient shifts, not toggles
      ══════════════════════════════════════════════════════════════════ */
-  .empty-state {
-    @apply flex flex-col items-center justify-center py-16 px-6;
-    @apply text-center space-y-4;
+  .vibe-pill {
+    @apply px-4 py-2 rounded-full font-medium text-sm;
+    @apply transition-all duration-500 border-2 border-transparent;
   }
 
-  .empty-state-icon {
-    @apply w-16 h-16 rounded-full bg-muted flex items-center justify-center;
-    @apply text-muted-foreground;
+  .vibe-pill-active {
+    box-shadow: var(--shadow-whisper);
+  }
+
+  .vibe-friend .vibe-pill-active {
+    background: hsl(var(--vibe-friend) / 0.1);
+    color: hsl(var(--vibe-friend));
+    border-color: hsl(var(--vibe-friend) / 0.25);
+  }
+
+  .vibe-professional .vibe-pill-active {
+    background: hsl(var(--vibe-professional) / 0.1);
+    color: hsl(var(--vibe-professional));
+    border-color: hsl(var(--vibe-professional) / 0.25);
+  }
+
+  .vibe-exam .vibe-pill-active {
+    background: hsl(var(--vibe-exam) / 0.1);
+    color: hsl(var(--vibe-exam));
+    border-color: hsl(var(--vibe-exam) / 0.25);
+  }
+
+  .vibe-cultural .vibe-pill-active {
+    background: hsl(var(--vibe-cultural) / 0.1);
+    color: hsl(var(--vibe-cultural));
+    border-color: hsl(var(--vibe-cultural) / 0.25);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     Scrollbar - Minimal
+     EMPTY STATES - Intentional silence
+     ══════════════════════════════════════════════════════════════════ */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-20 px-8;
+    @apply text-center;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     TYPING - Human delay feeling
+     ══════════════════════════════════════════════════════════════════ */
+  .thinking-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-muted-foreground/50;
+    animation: thinking 1.8s ease-in-out infinite;
+  }
+
+  .thinking-dot:nth-child(1) { animation-delay: 0ms; }
+  .thinking-dot:nth-child(2) { animation-delay: 300ms; }
+  .thinking-dot:nth-child(3) { animation-delay: 600ms; }
+
+  @keyframes thinking {
+    0%, 60%, 100% { 
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    30% { 
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     SCROLLBAR - Invisible by default
      ══════════════════════════════════════════════════════════════════ */
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -375,75 +357,78 @@
     display: none;
   }
 
-  .scrollbar-thin {
+  .scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
+  .scrollbar-subtle::-webkit-scrollbar {
+    width: 3px;
   }
-  .scrollbar-thin::-webkit-scrollbar-track {
+  .scrollbar-subtle::-webkit-scrollbar-track {
     background: transparent;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
+  .scrollbar-subtle::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border-radius: 2px;
+    border-radius: 1.5px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════
+     INTERACTION - Gentle, not mechanical
+     ══════════════════════════════════════════════════════════════════ */
+  .interactive-gentle {
+    @apply transition-all duration-300;
+    @apply hover:scale-[1.01] active:scale-[0.99];
+  }
+
+  .interactive-lift {
+    @apply transition-all duration-500;
+  }
+  .interactive-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
   }
 }
 
 @layer utilities {
   /* ══════════════════════════════════════════════════════════════════
-     Animations - Gentle, human-like
+     ANIMATIONS - Slow, intentional, human-paced
      ══════════════════════════════════════════════════════════════════ */
   
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
   .animate-breathe {
-    animation: breathe 4s ease-in-out infinite;
+    animation: breathe 5s ease-in-out infinite;
   }
 
-  .animate-slide-up {
-    animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .animate-appear {
+    animation: appear 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
-  .animate-slide-in-right {
-    animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .animate-thought-in {
+    animation: thought-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   .animate-fade-in {
-    animation: fade-in 0.5s ease-out forwards;
-  }
-
-  .animate-scale-in {
-    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  .animate-message-in {
-    animation: message-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+    animation: fade-in 0.6s ease-out forwards;
   }
 
   @keyframes breathe {
     0%, 100% { 
       transform: scale(1);
-      opacity: 0.8;
+      opacity: 0.9;
     }
     50% { 
-      transform: scale(1.05);
+      transform: scale(1.02);
       opacity: 1;
     }
   }
 
-  @keyframes slide-up {
+  @keyframes appear {
     from { 
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateY(12px);
     }
     to { 
       opacity: 1;
@@ -451,34 +436,7 @@
     }
   }
 
-  @keyframes slide-in-right {
-    from { 
-      opacity: 0;
-      transform: translateX(12px);
-    }
-    to { 
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes scale-in {
-    from { 
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to { 
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes message-in {
+  @keyframes thought-in {
     from { 
       opacity: 0;
       transform: translateY(8px) scale(0.98);
@@ -489,10 +447,39 @@
     }
   }
 
-  /* Animation delays for staggered effects */
-  .delay-75 { animation-delay: 75ms; }
+  @keyframes fade-up {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Stagger delays */
   .delay-100 { animation-delay: 100ms; }
-  .delay-150 { animation-delay: 150ms; }
   .delay-200 { animation-delay: 200ms; }
   .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* ══════════════════════════════════════════════════════════════════
+     ACCENTS - Minimal, intentional color pops
+     ══════════════════════════════════════════════════════════════════ */
+  .accent-dot {
+    @apply w-2 h-2 rounded-full;
+    background: hsl(var(--accent));
+  }
+
+  .accent-line {
+    @apply w-8 h-0.5 rounded-full;
+    background: hsl(var(--accent));
+  }
 }
