@@ -34,7 +34,7 @@ const Chat = () => {
   
   // Get mode from navigation state or default to friend
   const initialMode = (location.state as { mode?: ChatMode } | null)?.mode || "friend";
-  const [mode] = useState<ChatMode>(initialMode);
+  const [mode, setMode] = useState<ChatMode>(initialMode);
   
   const [hasProcessedInitialState, setHasProcessedInitialState] = useState(false);
   
@@ -212,7 +212,7 @@ const Chat = () => {
           </p>
         </div>
       ) : (
-        <ChatInput onSend={handleSend} isLoading={isLoading} />
+        <ChatInput onSend={handleSend} isLoading={isLoading} currentMode={mode} onModeChange={setMode} />
       )}
 
       {showHistory && (

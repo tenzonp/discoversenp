@@ -36,7 +36,7 @@ serve(async (req) => {
       });
     }
 
-    const { prompt } = await req.json();
+    const { prompt, editImageUrl } = await req.json();
     
     if (!prompt || typeof prompt !== "string") {
       return new Response(JSON.stringify({ error: "Prompt is required" }), {
@@ -72,6 +72,29 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
+    // Build the message content based on whether it's an edit or generate request
+    let messageContent: any;
+    
+    if (editImageUrl) {
+      // Image editing request
+      messageContent = [
+        {
+          type: "text",
+          text: `Edit this image: ${prompt}. 
+IMPORTANT: Add a subtle "Discoverse" text watermark in the bottom-right corner.`
+        },
+        {
+          type: "image_url",
+          image_url: { url: editImageUrl }
+        }
+      ];
+    } else {
+      // Image generation request with Discoverse branding
+      messageContent = `Generate a high quality, artistic image: ${prompt}. 
+IMPORTANT: Add a subtle "Discoverse" text watermark in the bottom-right corner of the image. 
+The watermark should be small, elegant, semi-transparent white text with a subtle shadow for visibility.`;
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -80,7 +103,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image-preview",
-        messages: [{ role: "user", content: `Generate a high quality image: ${prompt}` }],
+        messages: [{ role: "user", content: messageContent }],
         modalities: ["image", "text"],
       }),
     });

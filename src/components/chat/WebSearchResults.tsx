@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Clock, X, Zap } from "lucide-react";
+import { ExternalLink, Globe, Clock, X, Sparkles, Search } from "lucide-react";
 import { SearchResult } from "@/lib/api/firecrawl";
 import { cn } from "@/lib/utils";
 import { TIME_FILTER_LABELS, TIME_FILTER_LABELS_NE } from "@/hooks/useWebSearch";
@@ -26,37 +26,68 @@ const WebSearchResults = ({
   const timeLabelNe = TIME_FILTER_LABELS_NE[activeTimeFilter] || 'आज';
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/30">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
         <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-primary" />
+          <div className="relative">
+            <Globe className="w-4 h-4 text-primary" />
+            {isSearching && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary animate-ping" />
+            )}
+          </div>
           <span className="text-sm font-medium">
-            {isSearching ? 'Searching...' : `Results for "${query}"`}
+            {isSearching ? 'Discoverse Search...' : `"${query}"`}
           </span>
-          {/* Time Filter Badge */}
           {!isSearching && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-              <Zap className="w-3 h-3" />
+              <Sparkles className="w-3 h-3" />
               {timeLabel}
             </span>
           )}
         </div>
         <button 
           onClick={onClose}
-          className="p-1 rounded-full hover:bg-secondary transition-colors"
+          className="p-1.5 rounded-full hover:bg-secondary transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Loading State */}
+      {/* Animated Loading State */}
       {isSearching && (
-        <div className="px-4 py-8 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Bhote le khojdai cha... 🔎</p>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-            <Zap className="w-3 h-3" />
+        <div className="px-4 py-8 flex flex-col items-center gap-4">
+          {/* Animated Search Icon */}
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <Search className="w-8 h-8 text-primary animate-pulse" />
+            </div>
+            {/* Orbiting dots */}
+            <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary" />
+            </div>
+            <div className="absolute inset-0 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}>
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent" />
+            </div>
+            <div className="absolute inset-0 animate-spin" style={{ animationDuration: '4s' }}>
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal" />
+            </div>
+          </div>
+
+          {/* Animated Text */}
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-foreground animate-pulse">
+              Discoverse le khojdai cha...
+            </p>
+            <div className="flex items-center justify-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 text-primary text-xs font-medium">
+            <Sparkles className="w-3 h-3 animate-pulse" />
             Live • {timeLabelNe}
           </span>
         </div>
@@ -69,12 +100,14 @@ const WebSearchResults = ({
             <div 
               key={index}
               className={cn(
-                "px-4 py-3 hover:bg-secondary/50 transition-colors cursor-pointer group",
+                "px-4 py-3 hover:bg-secondary/50 transition-all cursor-pointer group",
+                "animate-in fade-in slide-in-from-bottom-2",
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
               onClick={() => onSelectResult?.(result)}
             >
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
                   <Globe className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -108,16 +141,16 @@ const WebSearchResults = ({
       {/* No Results */}
       {!isSearching && results.length === 0 && query && (
         <div className="px-4 py-6 text-center">
-          <p className="text-sm text-muted-foreground">No results found for "{query}"</p>
+          <p className="text-sm text-muted-foreground">"{query}" ko lagi kei payena</p>
         </div>
       )}
 
       {/* Footer */}
       {!isSearching && results.length > 0 && (
-        <div className="px-4 py-2 border-t border-border bg-secondary/20">
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <div className="px-4 py-2 border-t border-border bg-gradient-to-r from-primary/5 to-accent/5">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <Clock className="w-3 h-3" />
-            Bhote le {timeLabelNe}ko data internet bata lyayo 🔍
+            <span className="font-medium text-primary">Discoverse</span> le {timeLabelNe} ko data lyayo 🔍
           </p>
         </div>
       )}
