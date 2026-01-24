@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MessageCircle, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+import discoververseLogo from "@/assets/discoverse-logo.png";
 
 const emailSchema = z.string().email("Valid email chainxa");
 const passwordSchema = z.string().min(6, "Password ma 6+ characters chainxa");
@@ -82,10 +83,11 @@ const Auth = () => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <MessageCircle className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold">Bhote AI</span>
+          <img 
+            src={discoververseLogo} 
+            alt="Discoverse" 
+            className="h-6 w-auto"
+          />
         </div>
       </header>
 
@@ -94,11 +96,13 @@ const Auth = () => {
         <div className="w-full max-w-sm space-y-6">
           {/* Logo & Title */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary flex items-center justify-center shadow-soft">
-              <MessageCircle className="w-8 h-8 text-white" />
-            </div>
+            <img 
+              src={discoververseLogo} 
+              alt="Discoverse" 
+              className="h-12 w-auto mx-auto"
+            />
             <h1 className="text-2xl font-bold">
-              {isLogin ? "Welcome Back! 🙏" : "Join Bhote AI 🇳🇵"}
+              {isLogin ? "Welcome Back! 🙏" : "Join Discoverse 🇳🇵"}
             </h1>
             <p className="text-muted-foreground text-sm">
               {isLogin ? "Login gara ani chat gara" : "Account banau, free xa!"}

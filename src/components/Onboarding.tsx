@@ -9,7 +9,7 @@ interface OnboardingProps {
 const slides = [
   {
     icon: MessageCircle,
-    title: "Yo Bhote ho! 👋",
+    title: "Yo Discoverse ho! 👋",
     desc: "Tero AI sathi — Nepali ma bujhne, help garne, exam prep ma support dine.",
     color: "bg-foreground"
   },
@@ -34,13 +34,13 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(s => s + 1);
     } else {
-      localStorage.setItem("bhote_onboarded", "true");
+      localStorage.setItem("discoverse_onboarded", "true");
       onComplete();
     }
   };
 
   const handleSkip = () => {
-    localStorage.setItem("bhote_onboarded", "true");
+    localStorage.setItem("discoverse_onboarded", "true");
     onComplete();
   };
 
@@ -94,7 +94,7 @@ export const useOnboarding = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    const onboarded = localStorage.getItem("bhote_onboarded");
+    const onboarded = localStorage.getItem("discoverse_onboarded");
     if (!onboarded) {
       setShowOnboarding(true);
     }

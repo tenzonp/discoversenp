@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Sparkles } from "lucide-react";
+import discoververseLogo from "@/assets/discoverse-logo.png";
 
 const Hero = () => {
   return (
@@ -19,11 +20,15 @@ const Hero = () => {
             <span className="text-sm font-medium text-primary">Nepal's First Cultural AI</span>
           </div>
 
-          {/* Main heading */}
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
-            <span className="block text-foreground">नमस्ते! म हुँ</span>
-            <span className="gradient-text">Bhote AI</span>
-          </h1>
+          {/* Main heading with Logo */}
+          <div className="space-y-4">
+            <span className="block text-3xl md:text-4xl font-bold text-foreground">नमस्ते! म हुँ</span>
+            <img 
+              src={discoververseLogo} 
+              alt="Discoverse" 
+              className="h-16 md:h-24 w-auto mx-auto"
+            />
+          </div>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User } from "lucide-react";
+import discoververseLogo from "@/assets/discoverse-logo.png";
 
 interface Message {
   role: "user" | "assistant";
@@ -8,7 +9,7 @@ interface Message {
 }
 
 const sampleConversation: Message[] = [
-  { role: "user", content: "Namaste Bhote! K xa khabar?" },
+  { role: "user", content: "Namaste Discoverse! K xa khabar?" },
   { role: "assistant", content: "Namaste bro! 😄 Sanchai xu, timro kura sun. K help chahinxa aaja?" },
   { role: "user", content: "Loksewa exam ko lagi tips deu na" },
   { role: "assistant", content: "La bujheu! Loksewa ko lagi:\n\n1️⃣ Samvidhan ra current affairs focus gar\n2️⃣ Daily 2-3 hours padh\n3️⃣ Mock test dinai gar\n\nKun subject weak lagxa? Teibata start garaum! 💪" },
@@ -24,7 +25,7 @@ const ChatPreview = () => {
         {/* Section header */}
         <div className="text-center mb-12 space-y-4">
           <h2 className="text-3xl md:text-5xl font-bold text-foreground">
-            <span className="gradient-text">Try Bhote AI</span> अहिले
+            <span className="gradient-text">Try Discoverse</span> अहिले
           </h2>
           <p className="text-lg text-muted-foreground">
             Yo ho hamro conversation style — friendly, helpful, ani Nepali! 🇳🇵
@@ -39,7 +40,7 @@ const ChatPreview = () => {
               <Bot className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-primary-foreground">Bhote AI</h3>
+              <h3 className="font-semibold text-primary-foreground">Discoverse</h3>
               <p className="text-xs text-primary-foreground/80">Always online for you ✨</p>
             </div>
             <div className="ml-auto flex items-center gap-1">

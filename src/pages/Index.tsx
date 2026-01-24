@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Onboarding, useOnboarding } from "@/components/Onboarding";
 import { Moon, Sun } from "lucide-react";
+import discoververseLogo from "@/assets/discoverse-logo.png";
 
 // Time-based greeting - feels like a friend checking in
 const getGreeting = () => {
@@ -25,7 +26,7 @@ const vibes = [
   { 
     id: "study", 
     text: "Padhai garnu cha", 
-    prompt: "Help me study, I want to focus",
+    prompt: "", // Empty prompt - will populate input instead
     subtle: "Focus mode"
   },
   { 
@@ -53,19 +54,28 @@ const Index = () => {
     return <Onboarding onComplete={completeOnboarding} />;
   }
 
-  const handleVibeClick = (prompt: string) => {
-    navigate("/chat", { state: { initialMessage: prompt } });
+  const handleVibeClick = (vibe: typeof vibes[0]) => {
+    if (vibe.id === "study") {
+      // For study mode, just navigate without auto-send
+      navigate("/chat", { state: { mode: "exam", focusInput: true } });
+    } else if (vibe.prompt) {
+      navigate("/chat", { state: { initialMessage: vibe.prompt } });
+    } else {
+      navigate("/chat");
+    }
   };
 
   return (
     <main className="min-h-[100dvh] bg-background flex flex-col">
       {/* Minimal, almost invisible header */}
       <header className="flex items-center justify-between px-6 pt-6">
-        {/* Logo - Subtle, not shouting */}
+        {/* Logo - Discoverse */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
-            <span className="text-accent text-sm font-medium">भ</span>
-          </div>
+          <img 
+            src={discoververseLogo} 
+            alt="Discoverse" 
+            className="h-8 w-auto"
+          />
         </div>
         
         {/* Actions - Nearly invisible */}
@@ -117,7 +127,7 @@ const Index = () => {
             {vibes.map((vibe, index) => (
               <button
                 key={vibe.id}
-                onClick={() => handleVibeClick(vibe.prompt)}
+                onClick={() => handleVibeClick(vibe)}
                 className="w-full vibe-card group flex items-center justify-between text-left animate-fade-up"
                 style={{ animationDelay: `${200 + index * 80}ms` }}
               >
