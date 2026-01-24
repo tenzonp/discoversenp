@@ -20,12 +20,14 @@ import WebSearchResults from "@/components/chat/WebSearchResults";
 import ImageGallery from "@/components/ImageGallery";
 import HangingModeSelector from "@/components/chat/HangingModeSelector";
 import RecentImagesBar from "@/components/chat/RecentImagesBar";
+import ExamClassSelector, { ExamClass, ExamSubject } from "@/components/chat/ExamClassSelector";
 import { cn } from "@/lib/utils";
+import { GraduationCap } from "lucide-react";
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
   professional: { title: "Namaste", subtitle: "Kasari help garnu?" },
-  exam: { title: "Ready?", subtitle: "Padhai suru garaum" },
+  exam: { title: "📚 Study Mode", subtitle: "Focus on your curriculum" },
   cultural: { title: "नमस्ते", subtitle: "Nepali ma kura garaum" },
 };
 
@@ -36,6 +38,17 @@ const Chat = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showMoodCheckin, setShowMoodCheckin] = useState(true);
+  
+  // Exam mode state
+  const [examClass, setExamClass] = useState<ExamClass>(() => {
+    const saved = localStorage.getItem("discoverse_exam_class");
+    return (saved as ExamClass) || null;
+  });
+  const [examSubject, setExamSubject] = useState<ExamSubject>(() => {
+    const saved = localStorage.getItem("discoverse_exam_subject");
+    return (saved as ExamSubject) || "all";
+  });
+  const [showExamSelector, setShowExamSelector] = useState(false);
   
   // Get mode from navigation state or default to friend
   const initialMode = (location.state as { mode?: ChatMode } | null)?.mode || "friend";
@@ -125,6 +138,41 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Save exam preferences
+  useEffect(() => {
+    if (examClass) {
+      localStorage.setItem("discoverse_exam_class", examClass);
+    }
+    if (examSubject) {
+      localStorage.setItem("discoverse_exam_subject", examSubject);
+    }
+  }, [examClass, examSubject]);
+
+  // Show exam selector when entering exam mode without class selected
+  useEffect(() => {
+    if (mode === "exam" && !examClass) {
+      setShowExamSelector(true);
+    }
+  }, [mode, examClass]);
+
+  // Build exam-focused search query
+  const buildExamSearchQuery = (content: string): string => {
+    if (mode !== "exam" || !examClass) return content;
+    
+    const subjectMap: Record<ExamSubject, string> = {
+      all: "",
+      math: "mathematics",
+      science: "science physics chemistry biology",
+      english: "english grammar",
+      social: "social studies history geography civics",
+    };
+    
+    const subjectKeywords = subjectMap[examSubject] || "";
+    const gradeLevel = parseInt(examClass) <= 10 ? "SEE Nepal" : "NEB +2 Nepal";
+    
+    return `Class ${examClass} ${subjectKeywords} ${gradeLevel} ${content} solution explanation step by step`;
+  };
+
   const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => {
     if (messageLimitReached) return;
     await extractAndSaveInfo(content);
@@ -133,14 +181,36 @@ const Chat = () => {
     const memoryContext = buildMemoryContext();
     let fullContext = memoryContext + moodContext;
     
-    const searchQueryToUse = webSearchQuery || (shouldAutoSearch(content) ? content : null);
+    // In exam mode, always do web search with curriculum-focused query
+    const isExamMode = mode === "exam" && examClass;
+    const baseSearchQuery = webSearchQuery || content;
+    const searchQueryToUse = isExamMode 
+      ? buildExamSearchQuery(baseSearchQuery)
+      : (webSearchQuery || (shouldAutoSearch(content) ? content : null));
+    
+    // Add exam context to AI
+    if (isExamMode) {
+      const subjectLabel = examSubject === "all" ? "all subjects" : examSubject;
+      fullContext += `\n\n📚 EXAM STUDY MODE ACTIVE:
+- Student Class: Class ${examClass}
+- Focus Subject: ${subjectLabel}
+- Curriculum: ${parseInt(examClass) <= 10 ? "SEE (Secondary Education Examination) Nepal" : "NEB +2 Higher Secondary Nepal"}
+
+INSTRUCTIONS FOR EXAM MODE:
+1. Provide step-by-step solutions for math problems
+2. Explain concepts clearly for a Class ${examClass} student
+3. Use examples relevant to Nepal curriculum
+4. For math, show all working steps
+5. Cite sources and provide accurate information
+6. Be encouraging and supportive`;
+    }
     
     if (searchQueryToUse) {
       const results = await search(searchQueryToUse);
       if (results && results.length > 0) {
-        const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${searchQueryToUse}":\n${results.slice(0, 5).map((r, i) => 
+        const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${isExamMode ? content : searchQueryToUse}":\n${results.slice(0, 5).map((r, i) => 
           `${i + 1}. [${r.title}](${r.url})\n   ${r.description || r.markdown?.slice(0, 200) || ''}`
-        ).join('\n\n')}\n\nUse these search results to answer the user's question. Cite sources when relevant.`;
+        ).join('\n\n')}\n\n${isExamMode ? 'Use these search results to provide accurate, curriculum-specific answers. Show step-by-step solutions for math problems.' : 'Use these search results to answer the user\'s question. Cite sources when relevant.'}`;
         fullContext += searchContext;
       }
     }
@@ -175,6 +245,33 @@ const Chat = () => {
       
       {/* Hanging Mode Selector - positioned below header */}
       <HangingModeSelector currentMode={mode} onModeChange={setMode} />
+
+      {/* Exam Class Selector Modal */}
+      {showExamSelector && (
+        <ExamClassSelector
+          selectedClass={examClass}
+          selectedSubject={examSubject}
+          onClassChange={setExamClass}
+          onSubjectChange={setExamSubject}
+          onClose={() => setShowExamSelector(false)}
+        />
+      )}
+
+      {/* Exam Mode Active Badge */}
+      {mode === "exam" && examClass && (
+        <div className="px-4 py-2 bg-primary/5 border-b border-primary/10">
+          <button
+            onClick={() => setShowExamSelector(true)}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
+          >
+            <GraduationCap className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              Class {examClass} • {examSubject === "all" ? "All Subjects" : examSubject.charAt(0).toUpperCase() + examSubject.slice(1)}
+            </span>
+            <span className="text-xs text-muted-foreground ml-2">Tap to change</span>
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">
         {/* Web Search Results */}
@@ -216,7 +313,12 @@ const Chat = () => {
                 {greeting.subtitle}
               </p>
             </div>
-            <WelcomeScreen onSuggestionClick={(s) => handleSend(s)} />
+            <WelcomeScreen 
+              onSuggestionClick={(s) => handleSend(s)} 
+              mode={mode}
+              examClass={examClass}
+              examSubject={examSubject}
+            />
           </div>
         ) : (
           <div className="px-5 py-6 space-y-6 max-w-2xl mx-auto">
