@@ -9,6 +9,7 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import ProgressDashboard from "./pages/ProgressDashboard";
+import SharedChat from "./pages/SharedChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/progress" element={<ProgressDashboard />} />
+            <Route path="/shared" element={<SharedChat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
