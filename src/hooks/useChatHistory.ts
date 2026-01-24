@@ -58,12 +58,13 @@ const UPLOADED_IMAGE_EDIT_PATTERNS = [
   /(?:yo|tyo)\s+(?:image|photo)\s+(?:lai|ma)/i,
 ];
 
-export const useChatHistory = (userId: string | undefined, mode: string = "friend") => {
+export const useChatHistory = (userId: string | undefined, mode: string = "friend", messageLimit: number = 50) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isExtractingText, setIsExtractingText] = useState(false);
   const [imageRemaining, setImageRemaining] = useState<number | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [messageLimitReached, setMessageLimitReached] = useState(false);
@@ -72,7 +73,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
   const lastUploadedImageRef = useRef<string | null>(null);
   const { toast } = useToast();
 
-  const MESSAGE_LIMIT = 50;
+  const EXTRACT_TEXT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-text`;
 
   // Load user's conversations
   const loadConversations = useCallback(async () => {
@@ -211,22 +212,59 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     return false;
   }, []);
 
-  // Send message with streaming
-  const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string, userContext?: string) => {
-    if ((!content.trim() && !imageUrl) || isLoading || isGeneratingImage || !userId) return;
+  // Handle text extraction from image
+  const handleTextExtraction = useCallback(async (imageUrl: string, convId: string, content: string) => {
+    setIsExtractingText(true);
+    
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: `[Image: ${imageUrl}]\n\n${content}`,
+      imageUrl,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    await saveMessage(convId, "user", `[Image: ${imageUrl}]\n\n${content}`);
 
-    // Check 50 message limit
-    if (messages.length >= MESSAGE_LIMIT) {
-      setMessageLimitReached(true);
-      const limitMessage: Message = {
+    try {
+      const response = await fetch(EXTRACT_TEXT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Text extraction failed");
+      }
+
+      const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "📝 Yo chat ma 50 message pugyo! Naya chat suru gara continue garna 🙏\n\nTop menu ma 'New Chat' click gara ya arko conversation suru gara.",
+        content: `📝 **Extracted Text:**\n\n${data.text}`,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, limitMessage]);
-      return;
+      setMessages((prev) => [...prev, assistantMessage]);
+      await saveMessage(convId, "assistant", assistantMessage.content);
+    } catch (error) {
+      console.error("Text extraction error:", error);
+      toast({
+        variant: "destructive",
+        title: "Text Extract Error",
+        description: error instanceof Error ? error.message : "Could not extract text",
+      });
+    } finally {
+      setIsExtractingText(false);
     }
+  }, [saveMessage, toast]);
+
+  // Send message with streaming
+  const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string, userContext?: string) => {
+    if ((!content.trim() && !imageUrl) || isLoading || isGeneratingImage || isExtractingText || !userId) return;
 
     let convId = currentConversationId;
     
@@ -234,6 +272,28 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     if (!convId) {
       convId = await createConversation(content.slice(0, 50) || "Image message");
       if (!convId) return;
+    }
+
+    // Check message limit based on tier
+    if (messages.length >= messageLimit) {
+      setMessageLimitReached(true);
+      const limitMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: messageLimit <= 50 
+          ? "📝 Yo chat ma 50 message pugyo! Pro ma upgrade gara 150 messages pauna, ya naya chat suru gara 🙏"
+          : `📝 Yo chat ma ${messageLimit} message pugyo! Naya chat suru gara continue garna 🙏`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, limitMessage]);
+      return;
+    }
+
+    // Check for text extraction request with uploaded image
+    const isTextExtract = detectTextExtraction(content);
+    if (isTextExtract && imageUrl) {
+      await handleTextExtraction(imageUrl, convId, content);
+      return;
     }
 
     // Store uploaded image for potential editing later
@@ -489,6 +549,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
   const clearChat = useCallback(() => {
     setCurrentConversationId(null);
     setMessages([]);
+    setMessageLimitReached(false);
   }, []);
 
   // Load conversations on mount
@@ -504,6 +565,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     currentConversationId,
     isLoading,
     isGeneratingImage,
+    isExtractingText,
     imageRemaining,
     loadingHistory,
     messageLimitReached,
@@ -513,5 +575,6 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     deleteConversation,
     clearChat,
     loadConversations,
+    lastGeneratedImage: lastGeneratedImageRef.current,
   };
 };

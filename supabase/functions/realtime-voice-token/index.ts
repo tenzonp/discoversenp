@@ -62,7 +62,8 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not set");
     }
 
-    // Use the full model for better voice quality and language understanding
+    // Use gpt-4o-mini-realtime for MUCH lower cost but still good quality
+    // Cost reduction: ~80% cheaper than full gpt-4o-realtime
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
@@ -70,20 +71,21 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: "ash", // Deeper, warmer voice - less American
+        model: "gpt-4o-mini-realtime-preview-2024-12-17", // MUCH cheaper, still good
+        voice: "ash", // Deeper, warmer voice
         instructions: DISCOVERSE_PROMPT,
         input_audio_transcription: {
           model: "whisper-1"
         },
         turn_detection: {
           type: "server_vad",
-          threshold: 0.6, // Higher threshold - wait for clear speech
-          prefix_padding_ms: 500, // More padding before speech
-          silence_duration_ms: 1200 // Longer pause tolerance - natural Nepali pace
+          threshold: 0.65, // Higher threshold = less false triggers = less API calls
+          prefix_padding_ms: 400,
+          silence_duration_ms: 1000 // Shorter silence = faster responses = less compute
         },
         modalities: ["text", "audio"],
-        temperature: 0.7, // Slightly less random for clarity
+        temperature: 0.6, // Lower temp = more deterministic = less tokens
+        max_response_output_tokens: 150, // Limit response length = major cost saver
       }),
     });
 

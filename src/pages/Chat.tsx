@@ -5,6 +5,7 @@ import { useChatHistory } from "@/hooks/useChatHistory";
 import { useMoodHistory } from "@/hooks/useMoodHistory";
 import { useChatMemory } from "@/hooks/useChatMemory";
 import { useWebSearch } from "@/hooks/useWebSearch";
+import { useSubscription } from "@/hooks/useSubscription";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -17,9 +18,8 @@ import MoodCheckin from "@/components/chat/MoodCheckin";
 import WebSearchResults from "@/components/chat/WebSearchResults";
 import ImageGallery from "@/components/ImageGallery";
 import HangingModeSelector from "@/components/chat/HangingModeSelector";
+import RecentImagesBar from "@/components/chat/RecentImagesBar";
 import { cn } from "@/lib/utils";
-
-const MESSAGE_LIMIT = 50;
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
@@ -42,19 +42,23 @@ const Chat = () => {
   
   const [hasProcessedInitialState, setHasProcessedInitialState] = useState(false);
   
+  // Get subscription tier for message limits
+  const { messageLimit, subscription } = useSubscription(user?.id);
+  
   const {
     messages,
     conversations,
     currentConversationId,
     isLoading,
     isGeneratingImage,
+    isExtractingText,
     imageRemaining,
     messageLimitReached,
     sendMessage,
     loadMessages,
     deleteConversation,
     clearChat,
-  } = useChatHistory(user?.id, mode);
+  } = useChatHistory(user?.id, mode, messageLimit);
 
   const { buildMoodContext, loadMoodHistory } = useMoodHistory(user?.id);
   const { buildMemoryContext, extractAndSaveInfo } = useChatMemory(user?.id);
@@ -211,6 +215,12 @@ const Chat = () => {
             {isGeneratingImage && (
               <ImageGeneratingIndicator remaining={imageRemaining} />
             )}
+            {isExtractingText && (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <span>Reading text from image...</span>
+              </div>
+            )}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <TypingIndicator />
             )}
@@ -220,16 +230,37 @@ const Chat = () => {
       </div>
 
       {messageLimitReached ? (
-        <div className="px-5 py-4 bg-background">
+        <div className="px-5 py-4 bg-background space-y-2">
+          {subscription.tier === "free" && (
+            <button 
+              onClick={() => navigate("/profile")}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-medium transition-all hover:opacity-90"
+            >
+              ⭐ Pro ma Upgrade - 150 Messages
+            </button>
+          )}
           <button 
             onClick={clearChat}
-            className="w-full py-3 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-all"
+            className="w-full py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-all"
           >
             ✨ Naya Chat Suru Gara
           </button>
         </div>
       ) : (
-        <ChatInput onSend={handleSend} isLoading={isLoading || isGeneratingImage} currentMode={mode} onModeChange={setMode} />
+        <div className="space-y-2">
+          {/* Recent Images Bar */}
+          {user && messages.length > 0 && (
+            <div className="px-5 flex justify-center">
+              <RecentImagesBar 
+                userId={user.id} 
+                onSelectImage={(imageUrl, prompt) => {
+                  handleSend(`Edit this image: ${prompt || 'make it better'}`, imageUrl);
+                }}
+              />
+            </div>
+          )}
+          <ChatInput onSend={handleSend} isLoading={isLoading || isGeneratingImage || isExtractingText} currentMode={mode} onModeChange={setMode} />
+        </div>
       )}
 
       {showHistory && (
