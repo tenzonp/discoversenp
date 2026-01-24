@@ -1,9 +1,10 @@
-import { Copy, Check, Volume2, VolumeX, Bookmark, BookmarkCheck } from "lucide-react";
+import { Copy, Check, Volume2, VolumeX, Bookmark, BookmarkCheck, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { Message } from "@/hooks/useChatHistory";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useStudyNotes } from "@/hooks/useStudyNotes";
+import { useFlashcards } from "@/hooks/useFlashcards";
 import { toast } from "sonner";
 
 interface ChatMessageProps {
@@ -22,7 +23,9 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false, userId, exa
   const { speak, stop, isSpeaking, isEnabled } = useTextToSpeech();
   const [hasSpoken, setHasSpoken] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isCardCreated, setIsCardCreated] = useState(false);
   const { saveNote, generateTitleFromContent, detectSubjectFromContent } = useStudyNotes();
+  const { createFlashcard } = useFlashcards(userId);
 
   // Human-like delayed appearance
   useEffect(() => {
@@ -86,6 +89,29 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false, userId, exa
     
     if (result) {
       setIsSaved(true);
+    }
+  };
+
+  const handleCreateFlashcard = async () => {
+    if (!userId || !textContent) {
+      toast.error('Please log in to create flashcards');
+      return;
+    }
+    
+    // Auto-generate Q&A format
+    const title = generateTitleFromContent(textContent);
+    const detectedSubject = examSubject || detectSubjectFromContent(textContent);
+    
+    // Create question from title and answer from content
+    const question = `Explain: ${title}`;
+    
+    const result = await createFlashcard(question, textContent, detectedSubject || 'general');
+    
+    if (result) {
+      setIsCardCreated(true);
+      toast.success('Flashcard created! 📚', {
+        description: 'Review it in the Flashcards panel'
+      });
     }
   };
 
@@ -157,18 +183,32 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false, userId, exa
             )}
           </button>
           {userId && (
-            <button
-              onClick={handleSaveNote}
-              className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
-              title={isSaved ? "Saved" : "Save to notes"}
-              disabled={isSaved}
-            >
-              {isSaved ? (
-                <BookmarkCheck className="w-3.5 h-3.5 text-primary" />
-              ) : (
-                <Bookmark className="w-3.5 h-3.5 text-muted-foreground/50" />
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleSaveNote}
+                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                title={isSaved ? "Saved" : "Save to notes"}
+                disabled={isSaved}
+              >
+                {isSaved ? (
+                  <BookmarkCheck className="w-3.5 h-3.5 text-primary" />
+                ) : (
+                  <Bookmark className="w-3.5 h-3.5 text-muted-foreground/50" />
+                )}
+              </button>
+              <button
+                onClick={handleCreateFlashcard}
+                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                title={isCardCreated ? "Card created" : "Create flashcard"}
+                disabled={isCardCreated}
+              >
+                {isCardCreated ? (
+                  <Layers className="w-3.5 h-3.5 text-primary" />
+                ) : (
+                  <Layers className="w-3.5 h-3.5 text-muted-foreground/50" />
+                )}
+              </button>
+            </>
           )}
           </div>
         )}
