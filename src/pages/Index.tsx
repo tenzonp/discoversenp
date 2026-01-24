@@ -2,45 +2,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Onboarding, useOnboarding } from "@/components/Onboarding";
-import { Moon, Sun } from "lucide-react";
-import discoververseLogo from "@/assets/discoverse-logo.png";
+import { Moon, Sun, User } from "lucide-react";
+import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
 
-// Time-based greeting - feels like a friend checking in
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 6) return { text: "Sutteu ki?", sub: "Rati ko samay ho" };
-  if (hour < 12) return { text: "Subha prabhat", sub: "Bihana ko fresh" };
-  if (hour < 17) return { text: "Namaste", sub: "Diuso kasto cha?" };
-  if (hour < 21) return { text: "Sandhya", sub: "Aram se?" };
-  return { text: "Subha ratri", sub: "Aja k bhayo?" };
-};
-
-// Mood-based prompts - intimate check-in, not menu options
+// Mood-based prompts - minimal
 const vibes = [
-  { 
-    id: "tired", 
-    text: "Thakeko chu...", 
-    prompt: "I'm feeling tired today, just need someone to talk to",
-    subtle: "Rest linu parcha"
-  },
-  { 
-    id: "study", 
-    text: "Padhai garnu cha", 
-    prompt: "", // Empty prompt - will populate input instead
-    subtle: "Focus mode"
-  },
-  { 
-    id: "happy", 
-    text: "Aaja ramro din", 
-    prompt: "Hey! I'm in a good mood today, let's chat",
-    subtle: "Share garau"
-  },
-  { 
-    id: "confused", 
-    text: "Kei bujhnu cha...", 
-    prompt: "I need help figuring something out",
-    subtle: "Help chaiyo"
-  },
+  { id: "chat", text: "Kura gara", subtle: "General chat" },
+  { id: "study", text: "Padhai", subtle: "Focus mode" },
+  { id: "help", text: "Help chaiyo", subtle: "Ask anything" },
 ];
 
 const Index = () => {
@@ -48,7 +17,6 @@ const Index = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { showOnboarding, completeOnboarding } = useOnboarding();
-  const greeting = getGreeting();
 
   if (showOnboarding) {
     return <Onboarding onComplete={completeOnboarding} />;
@@ -56,116 +24,75 @@ const Index = () => {
 
   const handleVibeClick = (vibe: typeof vibes[0]) => {
     if (vibe.id === "study") {
-      // For study mode, just navigate without auto-send
       navigate("/chat", { state: { mode: "exam", focusInput: true } });
-    } else if (vibe.prompt) {
-      navigate("/chat", { state: { initialMessage: vibe.prompt } });
     } else {
       navigate("/chat");
     }
   };
 
   return (
-    <main className="min-h-[100dvh] bg-background flex flex-col">
-      {/* Minimal, almost invisible header */}
-      <header className="flex items-center justify-between px-6 pt-6">
-        {/* Logo - Discoverse */}
-        <div className="flex items-center gap-3">
-          <img 
-            src={discoververseLogo} 
-            alt="Discoverse" 
-            className="h-8 w-auto"
-          />
-        </div>
+    <main className="min-h-[100dvh] bg-background flex flex-col safe-area-top safe-area-bottom">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-4">
+        <div className="w-8" />
         
-        {/* Actions - Nearly invisible */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
-            aria-label="Toggle theme"
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors"
           >
             {theme === "dark" ? (
-              <Sun className="w-4 h-4 text-muted-foreground/70" />
+              <Sun className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <Moon className="w-4 h-4 text-muted-foreground/70" />
+              <Moon className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
           <button
             onClick={() => navigate(user ? "/profile" : "/auth")}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
-            aria-label={user ? "Profile" : "Login"}
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors"
           >
-            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-[10px] text-muted-foreground">
-                {user ? "👤" : "→"}
-              </span>
-            </div>
+            <User className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
       </header>
 
-      {/* Hero - Personal, intimate, like checking in with someone */}
-      <section className="flex-1 flex flex-col px-6 pt-16 pb-8">
-        {/* Greeting - Slow, thoughtful animation */}
-        <div className="mb-16 animate-appear">
-          <h1 className="text-3xl font-medium text-foreground mb-2 tracking-tight">
-            {greeting.text}
-          </h1>
-          <p className="text-muted-foreground text-base">
-            {greeting.sub}
-          </p>
-        </div>
+      {/* Hero */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6">
+        <div className="w-full max-w-xs text-center space-y-8 animate-appear">
+          {/* Logo */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-card flex items-center justify-center">
+              <img src={discoverseLogoNew} alt="Discoverse" className="w-10 h-10 object-contain" />
+            </div>
+          </div>
 
-        {/* Vibe Selector - Feels like confiding in a friend */}
-        <div className="space-y-2 animate-appear delay-200">
-          <p className="text-xs text-muted-foreground/70 uppercase tracking-wider mb-4">
-            Aaja k vibe cha?
-          </p>
-          
-          <div className="space-y-1.5">
-            {vibes.map((vibe, index) => (
+          {/* Title */}
+          <div className="space-y-1">
+            <h1 className="text-xl font-medium">Discoverse</h1>
+            <p className="text-sm text-muted-foreground">K cha?</p>
+          </div>
+
+          {/* Vibes */}
+          <div className="space-y-2 pt-4">
+            {vibes.map((vibe) => (
               <button
                 key={vibe.id}
                 onClick={() => handleVibeClick(vibe)}
-                className="w-full vibe-card group flex items-center justify-between text-left animate-fade-up"
-                style={{ animationDelay: `${200 + index * 80}ms` }}
+                className="w-full py-3 px-4 rounded-xl bg-card hover:bg-accent/10 transition-colors text-left flex items-center justify-between group"
               >
-                <div>
-                  <span className="text-foreground text-base group-hover:text-accent transition-colors duration-300">
-                    {vibe.text}
-                  </span>
-                  <span className="block text-xs text-muted-foreground/60 mt-0.5 group-hover:text-muted-foreground transition-colors duration-300">
-                    {vibe.subtle}
-                  </span>
-                </div>
-                <div className="w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <svg className="w-3 h-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+                <span className="text-sm font-medium">{vibe.text}</span>
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                  {vibe.subtle}
+                </span>
               </button>
             ))}
           </div>
         </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Direct chat option - Almost hidden, for those who know */}
-        <button
-          onClick={() => navigate("/chat")}
-          className="self-start text-sm text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-500 animate-fade-in delay-500"
-        >
-          Seedha chat →
-        </button>
       </section>
 
-      {/* Footer - Barely visible */}
-      <footer className="px-6 pb-8 animate-fade-in delay-500">
-        <p className="text-[11px] text-muted-foreground/30">
-          Made with ❤️ in Nepal
-        </p>
+      {/* Footer */}
+      <footer className="py-6 text-center">
+        <p className="text-xs text-muted-foreground/40">Nepal's AI</p>
       </footer>
     </main>
   );
