@@ -5,13 +5,17 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useImageGeneration } from "@/hooks/useImageGeneration";
+import ModeDropdown from "./ModeDropdown";
+import { ChatMode } from "./ModeSelector";
 
 interface ChatInputProps {
   onSend: (message: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => void;
   isLoading: boolean;
+  currentMode: ChatMode;
+  onModeChange: (mode: ChatMode) => void;
 }
 
-const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
+const ChatInput = ({ onSend, isLoading, currentMode, onModeChange }: ChatInputProps) => {
   const [input, setInput] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -176,54 +180,61 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
         </div>
       )}
 
-      <div className="flex items-end gap-3 max-w-2xl mx-auto">
-        {/* Image Upload - Subtle */}
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300 flex-shrink-0 mb-0.5"
-          disabled={isLoading}
-        >
-          <Image className="w-4 h-4 text-muted-foreground/50" />
-        </button>
-
-        {/* Text Input - Clean, minimal, no borders */}
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Sunirako..." : "Lekhnus..."}
-            rows={1}
-            className={cn(
-              "w-full resize-none bg-secondary/60 rounded-2xl px-4 py-3 pr-12",
-              "text-foreground placeholder:text-muted-foreground/50",
-              "focus:outline-none focus:bg-secondary",
-              "transition-all duration-300",
-              "text-[15px] leading-relaxed",
-              isListening && "bg-accent/5"
-            )}
-            disabled={isLoading}
-          />
-
-          {/* Send Button - Minimal, appears on content */}
+      <div className="flex flex-col gap-2 max-w-2xl mx-auto">
+        <div className="flex items-end gap-3">
+          {/* Image Upload - Subtle */}
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
           <button
-            onClick={handleSubmit}
-            disabled={!canSend}
-            className={cn(
-              "absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
-              canSend
-                ? "bg-foreground text-background scale-100"
-                : "bg-transparent text-muted-foreground/30 scale-95"
-            )}
+            onClick={() => fileInputRef.current?.click()}
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300 flex-shrink-0 mb-0.5"
+            disabled={isLoading}
           >
-            {isUploading || isGenerating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-3.5 h-3.5" />
-            )}
+            <Image className="w-4 h-4 text-muted-foreground/50" />
           </button>
+
+          {/* Text Input - Clean, minimal, no borders */}
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? "Sunirako..." : "Lekhnus..."}
+              rows={1}
+              className={cn(
+                "w-full resize-none bg-secondary/60 rounded-2xl px-4 py-3 pr-12",
+                "text-foreground placeholder:text-muted-foreground/50",
+                "focus:outline-none focus:bg-secondary",
+                "transition-all duration-300",
+                "text-[15px] leading-relaxed",
+                isListening && "bg-accent/5"
+              )}
+              disabled={isLoading}
+            />
+
+            {/* Send Button - Minimal, appears on content */}
+            <button
+              onClick={handleSubmit}
+              disabled={!canSend}
+              className={cn(
+                "absolute right-2 bottom-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
+                canSend
+                  ? "bg-foreground text-background scale-100"
+                  : "bg-transparent text-muted-foreground/30 scale-95"
+              )}
+            >
+              {isUploading || isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mode Selector - Like Perplexity */}
+        <div className="flex items-center justify-start pl-12">
+          <ModeDropdown currentMode={currentMode} onModeChange={onModeChange} />
         </div>
       </div>
     </div>

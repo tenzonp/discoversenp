@@ -85,7 +85,7 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessa
               loading="lazy" 
             />
             {isImageOnly && !isUser && (
-              <p className="text-xs text-muted-foreground/60 mt-2">✨ AI generated</p>
+              <p className="text-xs text-muted-foreground/60 mt-2">✨ Discoverse generated</p>
             )}
           </div>
         )}

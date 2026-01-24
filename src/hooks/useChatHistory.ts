@@ -18,7 +18,7 @@ export interface Conversation {
   updated_at: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bhote-chat`;
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discoverse-chat`;
 
 export const useChatHistory = (userId: string | undefined, mode: string = "friend") => {
   const [messages, setMessages] = useState<Message[]>([]);
