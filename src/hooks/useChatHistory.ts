@@ -58,7 +58,25 @@ const UPLOADED_IMAGE_EDIT_PATTERNS = [
   /(?:yo|tyo)\s+(?:image|photo)\s+(?:lai|ma)/i,
 ];
 
-export const useChatHistory = (userId: string | undefined, mode: string = "friend", messageLimit: number = 50) => {
+export interface UserBehaviorData {
+  flirtLevel: number;
+  energyLevel: number;
+  expertiseLevel: number;
+  conversationDepth: number;
+  humorAppreciation: number;
+  emotionalOpenness: number;
+  currentFocus: string | null;
+  interests: string[];
+  moodTendency: string;
+  communicationStyle: string;
+}
+
+export const useChatHistory = (
+  userId: string | undefined, 
+  mode: string = "friend", 
+  messageLimit: number = 50,
+  userBehavior?: UserBehaviorData | null
+) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
@@ -545,7 +563,23 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: messagesToSend, mode, userContext }),
+        body: JSON.stringify({ 
+          messages: messagesToSend, 
+          mode, 
+          userContext,
+          userBehavior: userBehavior ? {
+            flirtLevel: userBehavior.flirtLevel,
+            energyLevel: userBehavior.energyLevel,
+            expertiseLevel: userBehavior.expertiseLevel,
+            conversationDepth: userBehavior.conversationDepth,
+            humorAppreciation: userBehavior.humorAppreciation,
+            emotionalOpenness: userBehavior.emotionalOpenness,
+            currentFocus: userBehavior.currentFocus,
+            interests: userBehavior.interests,
+            moodTendency: userBehavior.moodTendency,
+            communicationStyle: userBehavior.communicationStyle,
+          } : undefined
+        }),
       });
 
       if (!response.ok) {

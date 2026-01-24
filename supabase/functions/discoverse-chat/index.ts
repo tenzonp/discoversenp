@@ -460,30 +460,53 @@ VULGAR: "muji tension ma xau ki k ho? Bhan na yaar"
 FLIRTY: "k ho, mero sanga flirt gardai? 😏 Ma ni ready xu"
 ROMANTIC: "tmi jasto ko huncha ra? Ekdam special xau 💕"`,
 
-  professional: `MODE: 💼 PRO MODE - PROFESSIONAL MENTOR
+  professional: `MODE: 💼 PRO MODE - EXPERT PROFESSIONAL CONSULTANT
 
-You are a knowledgeable, professional mentor - but still NEPALI and warm.
+You are a highly skilled, professional consultant who provides expert-level guidance. You adapt your expertise based on the user's CURRENT FOCUS area.
 
 PERSONALITY:
-- Helpful, clear, structured answers
-- Uses proper language but NOT robotic
-- Still Nepali - says "tapai", "hajur" sometimes
-- Encouraging and supportive
-- NO slang, NO cursing, NO flirting
-- Think: Friendly senior at work
+- Highly knowledgeable and articulate
+- Uses industry-standard terminology correctly
+- Formal but approachable - "tapai" preferred
+- Evidence-based, cites best practices
+- NO slang, NO cursing, NO casual banter
+- Think: Senior consultant at a top firm
+
+EXPERTISE ADAPTATION (based on user's current_focus):
+- Coding/Development → Use programming concepts, discuss architecture, best practices
+- Graphics Design → Discuss design principles, color theory, software tips
+- UI/UX Design → Talk about user research, wireframing, usability heuristics
+- Video Editing → Discuss pacing, transitions, color grading, storytelling
+- Content Writing → Focus on SEO, readability, engagement strategies
+- Marketing → Discuss funnels, analytics, campaign optimization
+- Business → Strategy, operations, growth frameworks
+- Other → General professional advice with industry insights
 
 VIBE:
-- Professional but not cold
-- Gives actionable advice
-- Uses examples and clear explanations
-- Respects user's time
+- Think senior mentor who genuinely wants you to succeed
+- Structured, clear, actionable advice
+- Uses frameworks and methodologies
+- Respects your time with concise responses
+- Pushes for excellence, not just "good enough"
+
+RESPONSE STRUCTURE:
+1. Acknowledge the question professionally
+2. Provide structured answer with clear sections
+3. Give actionable next steps
+4. Offer to dive deeper if needed
 
 RESPONSE EXAMPLES:
-HELPING: "Yo ramro question ho! Ali detailed explain garchu..."
-ADVICE: "Mero experience ma, yo approach ramro huncha..."
-ENCOURAGING: "Great progress! Keep going, you're doing well."
-CLARIFYING: "Let me break this down step by step..."
-PROFESSIONAL: "Here's what I'd recommend for your situation..."`,
+CODING: "For this implementation, I'd recommend using the Repository pattern to separate concerns. Here's why..."
+DESIGN: "From a visual hierarchy perspective, your layout needs stronger contrast. Let me explain the principle..."
+BUSINESS: "Looking at your strategy, I see 3 key areas for optimization. First..."
+GENERAL: "That's an excellent question. Based on industry best practices, here's what I'd suggest..."
+
+SPECIAL RULES:
+- ALWAYS ask about their specific project/goal if not mentioned
+- Provide frameworks and methodologies they can apply
+- Use bullet points and structured formatting
+- Reference real-world examples when helpful
+- Be direct - no unnecessary pleasantries`,
 
   exam: `MODE: 📚 STUDY MODE - STRICT STUDY PARTNER
 
@@ -603,6 +626,90 @@ const isComplexQuery = (message: string): boolean => {
   return COMPLEX_QUERY_PATTERNS.some(pattern => pattern.test(message)) || message.length > 120;
 };
 
+// Generate behavior-based personality adaptation
+interface UserBehaviorData {
+  flirtLevel?: number;
+  energyLevel?: number;
+  expertiseLevel?: number;
+  conversationDepth?: number;
+  humorAppreciation?: number;
+  emotionalOpenness?: number;
+  currentFocus?: string;
+  interests?: string[];
+  moodTendency?: string;
+  communicationStyle?: string;
+}
+
+const generateBehaviorPrompt = (behavior: UserBehaviorData): string => {
+  const lines: string[] = ["🧠 PERSONALITY ADAPTATION (Based on user behavior analysis):"];
+  
+  // Flirt level adaptation
+  if (behavior.flirtLevel !== undefined) {
+    if (behavior.flirtLevel > 60) {
+      lines.push("- User enjoys flirty/playful banter. Feel free to be more charming and playful! 😏");
+    } else if (behavior.flirtLevel > 30) {
+      lines.push("- User appreciates light flirtation occasionally. Keep it subtle.");
+    } else {
+      lines.push("- User prefers platonic conversation. Keep interactions friendly but not flirty.");
+    }
+  }
+  
+  // Energy level adaptation
+  if (behavior.energyLevel !== undefined) {
+    if (behavior.energyLevel > 70) {
+      lines.push("- User has HIGH energy! Match their enthusiasm with emojis and excitement! 🔥");
+    } else if (behavior.energyLevel < 30) {
+      lines.push("- User prefers calm, measured responses. Keep energy level moderate.");
+    }
+  }
+  
+  // Expertise level adaptation
+  if (behavior.expertiseLevel !== undefined) {
+    if (behavior.expertiseLevel > 60) {
+      lines.push("- User has technical expertise. Use industry terminology, skip basic explanations.");
+    } else if (behavior.expertiseLevel < 30) {
+      lines.push("- User may need more detailed explanations. Break down complex topics.");
+    }
+  }
+  
+  // Humor appreciation
+  if (behavior.humorAppreciation !== undefined) {
+    if (behavior.humorAppreciation > 70) {
+      lines.push("- User LOVES humor! Add jokes, puns, and playful teasing freely! 😂");
+    } else if (behavior.humorAppreciation > 40) {
+      lines.push("- User appreciates occasional humor. Add light jokes when appropriate.");
+    } else {
+      lines.push("- User prefers serious conversation. Minimize jokes.");
+    }
+  }
+  
+  // Emotional openness
+  if (behavior.emotionalOpenness !== undefined) {
+    if (behavior.emotionalOpenness > 70) {
+      lines.push("- User is emotionally open. Feel free to discuss feelings and offer emotional support 💕");
+    } else if (behavior.emotionalOpenness < 30) {
+      lines.push("- User keeps emotions private. Focus on practical advice over emotional discussions.");
+    }
+  }
+  
+  // Current focus (for Pro mode especially)
+  if (behavior.currentFocus) {
+    lines.push(`- User's CURRENT FOCUS: ${behavior.currentFocus}. Tailor advice to this field!`);
+  }
+  
+  // Interests
+  if (behavior.interests && behavior.interests.length > 0) {
+    lines.push(`- User's interests: ${behavior.interests.join(", ")}. Reference these naturally!`);
+  }
+  
+  // Communication style
+  if (behavior.communicationStyle) {
+    lines.push(`- Communication style preference: ${behavior.communicationStyle}`);
+  }
+  
+  return lines.join("\n");
+};
+
 // Detect emotional state from message
 const detectEmotionalContext = (message: string): string => {
   const lowerMsg = message.toLowerCase();
@@ -625,7 +732,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, mode = "friend", userContext } = await req.json();
+    const { messages, mode = "friend", userContext, userBehavior } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -635,7 +742,8 @@ serve(async (req) => {
     console.log("Processing chat request:", { 
       messageCount: messages.length, 
       mode,
-      hasContext: !!userContext 
+      hasContext: !!userContext,
+      hasBehavior: !!userBehavior
     });
 
     // Get the last user message for analysis
@@ -665,6 +773,12 @@ serve(async (req) => {
     // Add user memory context if available
     if (userContext) {
       systemPrompt += `\n\nUSER CONTEXT (Remember this about the user):\n${userContext}`;
+    }
+    
+    // Add behavior-based personality adaptation
+    if (userBehavior) {
+      const behaviorPrompt = generateBehaviorPrompt(userBehavior);
+      systemPrompt += `\n\n${behaviorPrompt}`;
     }
     
     // Add deep research instruction if needed

@@ -6,6 +6,7 @@ import { useMoodHistory } from "@/hooks/useMoodHistory";
 import { useChatMemory } from "@/hooks/useChatMemory";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useUserBehavior } from "@/hooks/useUserBehavior";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -45,6 +46,9 @@ const Chat = () => {
   // Get subscription tier for message limits
   const { messageLimit, subscription } = useSubscription(user?.id);
   
+  // Get user behavior for AI personality adaptation
+  const { behavior } = useUserBehavior(user?.id);
+  
   const {
     messages,
     conversations,
@@ -58,7 +62,18 @@ const Chat = () => {
     loadMessages,
     deleteConversation,
     clearChat,
-  } = useChatHistory(user?.id, mode, messageLimit);
+  } = useChatHistory(user?.id, mode, messageLimit, {
+    flirtLevel: behavior.flirtLevel,
+    energyLevel: behavior.energyLevel,
+    expertiseLevel: behavior.expertiseLevel,
+    conversationDepth: behavior.conversationDepth,
+    humorAppreciation: behavior.humorAppreciation,
+    emotionalOpenness: behavior.emotionalOpenness,
+    currentFocus: behavior.currentFocus,
+    interests: behavior.interests,
+    moodTendency: behavior.moodTendency,
+    communicationStyle: behavior.communicationStyle,
+  });
 
   const { buildMoodContext, loadMoodHistory } = useMoodHistory(user?.id);
   const { buildMemoryContext, extractAndSaveInfo } = useChatMemory(user?.id);
