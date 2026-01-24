@@ -1,14 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Mic, MicOff, Phone, PhoneOff, Loader2, AlertTriangle } from "lucide-react";
+import { X, Mic, MicOff, Phone, PhoneOff, Loader2, AlertTriangle, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeVoiceChat, EmotionMetrics, RealtimeMessage } from "@/utils/RealtimeVoiceChat";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import DiscoverseText from "@/components/DiscoverseText";
 
-const FREE_LIMIT_SECONDS = 180; // 3 minutes strict limit
+// Tier-based voice limits
+const VOICE_LIMITS = {
+  free: 180,    // 3 minutes
+  pro: 1800,    // 30 minutes
+  premium: 7200 // 120 minutes
+};
 
 interface VoiceChatModalProps {
   isOpen: boolean;
@@ -18,6 +24,9 @@ interface VoiceChatModalProps {
 
 const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProps) => {
   const { user } = useAuth();
+  const { subscription, voiceMinutes } = useSubscription(user?.id);
+  const voiceLimitSeconds = voiceMinutes * 60; // Convert minutes to seconds
+  
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -26,19 +35,19 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [aiTranscript, setAiTranscript] = useState("");
   const [sessionDuration, setSessionDuration] = useState(0);
-  const [remainingSeconds, setRemainingSeconds] = useState(FREE_LIMIT_SECONDS);
+  const [remainingSeconds, setRemainingSeconds] = useState(voiceLimitSeconds);
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [emotionMetrics, setEmotionMetrics] = useState<EmotionMetrics | null>(null);
   
   const chatRef = useRef<RealtimeVoiceChat | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const sessionDurationRef = useRef(0); // Track actual duration to avoid stale closure
-  const remainingSecondsRef = useRef(FREE_LIMIT_SECONDS);
+  const sessionDurationRef = useRef(0);
+  const remainingSecondsRef = useRef(voiceLimitSeconds);
   const { toast } = useToast();
 
-  // Check daily usage on mount - ALWAYS fetch fresh from DB
+  // Check daily usage - respects subscription tier limits
   const checkDailyUsage = useCallback(async (): Promise<number> => {
-    if (!user?.id) return FREE_LIMIT_SECONDS;
+    if (!user?.id) return voiceLimitSeconds;
 
     const today = new Date().toISOString().split("T")[0];
     const { data } = await supabase
@@ -49,16 +58,15 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       .single();
 
     const used = data?.total_seconds || 0;
-    const remaining = Math.max(0, FREE_LIMIT_SECONDS - used);
+    const remaining = Math.max(0, voiceLimitSeconds - used);
     
-    // CRITICAL: Update both state AND ref with fresh DB value
     setRemainingSeconds(remaining);
     remainingSecondsRef.current = remaining;
     setIsLimitReached(remaining <= 0);
     
-    console.log(`[Voice] Usage check: used=${used}s, remaining=${remaining}s`);
+    console.log(`[Voice] ${subscription.tier.toUpperCase()} tier: used=${used}s, limit=${voiceLimitSeconds}s, remaining=${remaining}s`);
     return remaining;
-  }, [user?.id]);
+  }, [user?.id, voiceLimitSeconds, subscription.tier]);
 
   // Update usage in database
   const updateUsage = useCallback(async (seconds: number) => {
@@ -127,9 +135,11 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     
     toast({
       title: "⏱️ Time's up!",
-      description: "3 minute free limit reached. Pay to continue.",
+      description: subscription.tier === "free" 
+        ? "3 minute free limit reached. Upgrade to Pro for 30 minutes!" 
+        : `${voiceMinutes} minute limit reached. Come back tomorrow!`,
     });
-  }, [updateUsage, toast]);
+  }, [updateUsage, toast, subscription.tier, voiceMinutes]);
 
   // Handle realtime messages
   const handleMessage = useCallback((event: RealtimeMessage) => {
@@ -357,24 +367,39 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
           <h2 className="text-xl font-medium text-foreground mb-2">
             Daily Limit Reached
           </h2>
-          <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-            You've used all 3 minutes of free voice chat today. Get 30 more minutes for just Rs. 50!
-          </p>
-          <Button 
-            className="gap-2 mb-3 bg-accent text-accent-foreground hover:bg-accent/90"
-            onClick={() => {
-              window.open("https://esewa.com.np", "_blank");
-              toast({
-                title: "eSewa Payment",
-                description: "Pay Rs. 50 and send screenshot to unlock 30 minutes",
-              });
-            }}
-          >
-            Pay Rs. 50 via eSewa
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Or come back tomorrow for free minutes
-          </p>
+          
+          {subscription.tier === "free" ? (
+            <>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                You've used all 3 minutes of free voice chat today. 
+                <span className="text-primary font-medium"> Pro members get 30 minutes!</span>
+              </p>
+              <div className="space-y-3 w-full max-w-xs">
+                <Button 
+                  className="w-full gap-2 bg-gradient-to-r from-primary to-accent text-white hover:opacity-90"
+                  onClick={() => {
+                    onClose();
+                    window.location.href = "/profile";
+                  }}
+                >
+                  <Crown className="w-4 h-4" />
+                  Upgrade to Pro - रू 299/month
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  ✨ 30 min voice • 150 messages • Expert AI
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                You've used your {voiceMinutes} minutes for today. Your Pro limit resets tomorrow!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Come back tomorrow for more voice chat
+              </p>
+            </>
+          )}
         </div>
       )}
 
