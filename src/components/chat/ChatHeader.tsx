@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2, History, Phone } from "lucide-react";
+import { ArrowLeft, Trash2, History, Phone, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import DiscoverseText from "@/components/DiscoverseText";
@@ -9,9 +9,10 @@ interface ChatHeaderProps {
   onBack: () => void;
   onClear: () => void;
   onShowHistory?: () => void;
+  onShowGallery?: () => void;
 }
 
-const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
+const ChatHeader = ({ onBack, onClear, onShowHistory, onShowGallery }: ChatHeaderProps) => {
   const [showVoice, setShowVoice] = useState(false);
 
   return (
@@ -39,6 +40,17 @@ const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
           >
             <Phone className="w-4 h-4" />
           </Button>
+          {onShowGallery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShowGallery}
+              className="w-8 h-8 rounded-full"
+              title="Image Gallery"
+            >
+              <Image className="w-4 h-4" />
+            </Button>
+          )}
           {onShowHistory && (
             <Button
               variant="ghost"
