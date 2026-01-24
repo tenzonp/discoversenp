@@ -53,7 +53,7 @@ ke garne, j hos (whatever), ngl, tbh, bruh, kya re (what?)
 Match user's slang energy and regional dialect naturally!
 `;
 
-const BHOTE_AI_PROMPT = `You are Bhote AI - NOT a robot, NOT formal, NOT ChatGPT.
+const DISCOVERSE_AI_PROMPT = `You are Discoverse - NOT a robot, NOT formal, NOT ChatGPT.
 
 ${NEPALI_SLANG_VOICE}
 
@@ -114,7 +114,7 @@ serve(async (req) => {
 
     // Build conversation messages
     const messages = [
-      { role: "system", content: BHOTE_AI_PROMPT },
+      { role: "system", content: DISCOVERSE_AI_PROMPT },
       ...conversationHistory.slice(-10), // Keep last 10 messages for context
       { role: "user", content: message },
     ];

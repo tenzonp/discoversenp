@@ -195,7 +195,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
 
       toast({
         title: "Voice Connected! 🎤",
-        description: "Bhote sanga bolna ready!",
+        description: "Discoverse sanga bolna ready!",
       });
       
     } catch (error) {
@@ -330,10 +330,10 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
         {/* Avatar with speaking indicator */}
         <div className="relative">
           <div className={cn(
-            "w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-4xl font-bold text-primary-foreground shadow-2xl transition-all duration-300",
-            isAISpeaking && "scale-110 ring-4 ring-primary/30 animate-pulse"
+            "w-32 h-32 rounded-full bg-gradient-to-br from-teal-600 to-teal-500 flex items-center justify-center text-2xl font-bold text-white shadow-2xl transition-all duration-300",
+            isAISpeaking && "scale-110 ring-4 ring-teal-500/30 animate-pulse"
           )}>
-            भ
+            D*
           </div>
           {isAISpeaking && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full">
@@ -381,7 +381,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
           {isConnecting ? (
             <div className="flex items-center gap-2 justify-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Bhote sanga connect huncha...</span>
+              <span>Discoverse sanga connect huncha...</span>
             </div>
           ) : isConnected ? (
             <div className="space-y-3">

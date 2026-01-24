@@ -34,6 +34,7 @@ const Chat = () => {
   const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [showMoodCheckin, setShowMoodCheckin] = useState(true);
   const [mode, setMode] = useState<ChatMode>("friend");
+  const [hasProcessedInitialState, setHasProcessedInitialState] = useState(false);
   
   const {
     messages,
@@ -59,16 +60,38 @@ const Chat = () => {
   } = useWebSearch();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<{ focus: () => void; setValue: (value: string) => void } | null>(null);
   const isLimitReached = messages.length >= MAX_MESSAGES;
 
-  // Handle initial message from home page vibes
+  // Handle initial state from home page vibes - ONLY AUTO-SEND FOR NON-STUDY MODES
   useEffect(() => {
-    const state = location.state as { initialMessage?: string } | null;
-    if (state?.initialMessage && user && !isLoading) {
-      handleSend(state.initialMessage);
+    if (hasProcessedInitialState) return;
+    
+    const state = location.state as { initialMessage?: string; mode?: ChatMode; focusInput?: boolean } | null;
+    
+    if (state && user && !loading) {
+      setHasProcessedInitialState(true);
+      
+      // If mode is specified, switch to it
+      if (state.mode) {
+        setMode(state.mode);
+      }
+      
+      // For study/exam mode, just focus the input - don't auto-send
+      if (state.focusInput) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
+      // For other vibes with initialMessage, auto-send as before
+      else if (state.initialMessage) {
+        handleSend(state.initialMessage);
+      }
+      
+      // Clear the state
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, user, isLoading]);
+  }, [location.state, user, loading, hasProcessedInitialState]);
 
   useEffect(() => {
     if (!loading && !user) {

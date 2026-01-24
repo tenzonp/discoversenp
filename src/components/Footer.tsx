@@ -1,4 +1,5 @@
 import { Heart, MapPin } from "lucide-react";
+import discoververseLogo from "@/assets/discoverse-logo.png";
 
 const Footer = () => {
   return (
@@ -7,11 +8,13 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo & tagline */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center text-primary-foreground font-bold">
-              भ
-            </div>
+            <img 
+              src={discoververseLogo} 
+              alt="Discoverse" 
+              className="h-8 w-auto"
+            />
             <div>
-              <h3 className="font-bold text-foreground">Bhote AI</h3>
+              <h3 className="font-bold text-foreground">Discoverse</h3>
               <p className="text-xs text-muted-foreground">Nepal's Own AI</p>
             </div>
           </div>
@@ -36,7 +39,7 @@ const Footer = () => {
         {/* Bottom text */}
         <div className="mt-8 pt-6 border-t border-border text-center">
           <p className="text-xs text-muted-foreground">
-            © 2025 Bhote AI. All rights reserved. 🇳🇵
+            © 2025 Discoverse. All rights reserved. 🇳🇵
           </p>
         </div>
       </div>
