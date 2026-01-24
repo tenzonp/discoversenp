@@ -31,13 +31,31 @@ const IMAGE_GENERATE_PATTERNS = [
 
 // Image edit/modify patterns
 const IMAGE_EDIT_PATTERNS = [
-  /(?:edit|modify|change|update|fix|improve|enhance|adjust|tweak|redo|remake)\s+(?:the|this|that|my|last|previous)?\s*(?:image|picture|photo|graphic)/i,
+  /(?:edit|modify|change|update|fix|improve|enhance|adjust|tweak|redo|remake|re-edit|reedit)\s+(?:the|this|that|my|last|previous|yo|tyo)?\s*(?:image|picture|photo|graphic)?/i,
   /(?:make|turn)\s+(?:it|the image|this)\s+(?:more|less|bigger|smaller|brighter|darker|colorful)/i,
-  /(?:add|remove|put|delete)\s+(?:something|text|color|filter|effect|background)\s+(?:to|from|on|in)\s+(?:the|this|that)?\s*(?:image|picture)/i,
+  /(?:add|remove|put|delete)\s+(?:something|text|color|filter|effect|background|person|object)\s+(?:to|from|on|in)\s+(?:the|this|that)?\s*(?:image|picture)?/i,
   /(?:image|picture)\s+(?:lai|ma)\s+(?:edit|change|modify|update)/i,
   /(?:yo|tyo|last|aghi ko)\s+(?:image|picture)\s+(?:lai)?\s*(?:change|edit|modify|update)/i,
-  /(?:regenerate|re-generate|redo|remake)\s+(?:the|this|that)?\s*(?:image|picture)/i,
-  /(?:different|another|new)\s+(?:version|style|look)\s+(?:of)?\s*(?:the|this)?\s*(?:image|picture)/i,
+  /(?:regenerate|re-generate|redo|remake)\s+(?:the|this|that)?\s*(?:image|picture)?/i,
+  /(?:different|another|new)\s+(?:version|style|look)\s+(?:of)?\s*(?:the|this)?\s*(?:image|picture)?/i,
+  /(?:try|make)\s+(?:again|different|another)/i,
+  /(?:feri|arko|naya)\s+(?:banau|bana|try)/i,
+];
+
+// Text extraction patterns for uploaded images
+const TEXT_EXTRACT_PATTERNS = [
+  /(?:extract|read|get|pull|copy)\s+(?:the|all)?\s*(?:text|words|content)\s+(?:from|in)\s+(?:this|the|that)?\s*(?:image|picture|photo)?/i,
+  /(?:what|whats|what's)\s+(?:written|text|words|content)\s+(?:in|on)\s+(?:this|the|that)?\s*(?:image|picture)?/i,
+  /(?:ocr|scan)\s+(?:this|the)?\s*(?:image|picture)?/i,
+  /(?:yo|tyo)\s+(?:image|picture)\s+(?:ma|bata)\s+(?:text|lekheko)/i,
+  /(?:text|lekheko)\s+(?:nikalau|nikala|padha|read)/i,
+];
+
+// Patterns for user uploading image + wanting edit
+const UPLOADED_IMAGE_EDIT_PATTERNS = [
+  /(?:edit|change|modify|update|fix|improve)\s+(?:this|the)?\s*(?:image|picture|photo)?/i,
+  /(?:with|using)\s+(?:this|the)\s+(?:image|picture)/i,
+  /(?:yo|tyo)\s+(?:image|photo)\s+(?:lai|ma)/i,
 ];
 
 export const useChatHistory = (userId: string | undefined, mode: string = "friend") => {
@@ -48,9 +66,13 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageRemaining, setImageRemaining] = useState<number | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [messageLimitReached, setMessageLimitReached] = useState(false);
   const lastGeneratedImageRef = useRef<string | null>(null);
   const lastImagePromptRef = useRef<string | null>(null);
+  const lastUploadedImageRef = useRef<string | null>(null);
   const { toast } = useToast();
+
+  const MESSAGE_LIMIT = 50;
 
   // Load user's conversations
   const loadConversations = useCallback(async () => {
@@ -169,9 +191,42 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     return { isEdit: false, basePrompt: null };
   }, []);
 
+  // Check if message is asking for text extraction from image
+  const detectTextExtraction = useCallback((content: string): boolean => {
+    for (const pattern of TEXT_EXTRACT_PATTERNS) {
+      if (pattern.test(content)) {
+        return true;
+      }
+    }
+    return false;
+  }, []);
+
+  // Check if user uploaded image and wants to edit it
+  const detectUploadedImageEdit = useCallback((content: string): boolean => {
+    for (const pattern of UPLOADED_IMAGE_EDIT_PATTERNS) {
+      if (pattern.test(content)) {
+        return true;
+      }
+    }
+    return false;
+  }, []);
+
   // Send message with streaming
   const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string, userContext?: string) => {
     if ((!content.trim() && !imageUrl) || isLoading || isGeneratingImage || !userId) return;
+
+    // Check 50 message limit
+    if (messages.length >= MESSAGE_LIMIT) {
+      setMessageLimitReached(true);
+      const limitMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "📝 Yo chat ma 50 message pugyo! Naya chat suru gara continue garna 🙏\n\nTop menu ma 'New Chat' click gara ya arko conversation suru gara.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, limitMessage]);
+      return;
+    }
 
     let convId = currentConversationId;
     
@@ -179,6 +234,11 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     if (!convId) {
       convId = await createConversation(content.slice(0, 50) || "Image message");
       if (!convId) return;
+    }
+
+    // Store uploaded image for potential editing later
+    if (imageUrl) {
+      lastUploadedImageRef.current = imageUrl;
     }
 
     // Build message content with image if provided
@@ -200,11 +260,25 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
 
     // Auto-detect image generation or use provided prompt
     let finalImagePrompt = generateImagePrompt;
+    let imageToEdit: string | null = null;
     
-    // Check for image edit request first
+    // Check for image edit request first - either from generated or uploaded image
     const editCheck = detectImageEdit(content);
-    if (editCheck.isEdit && lastGeneratedImageRef.current) {
-      finalImagePrompt = `${content}. Based on previous: ${editCheck.basePrompt || 'previous image'}`;
+    const uploadEditCheck = detectUploadedImageEdit(content);
+    
+    // Determine which image to edit
+    if (editCheck.isEdit || uploadEditCheck) {
+      // Prioritize: 1) user uploaded image with this message, 2) last generated, 3) last uploaded
+      if (imageUrl) {
+        imageToEdit = imageUrl;
+        finalImagePrompt = content;
+      } else if (lastGeneratedImageRef.current) {
+        imageToEdit = lastGeneratedImageRef.current;
+        finalImagePrompt = `${content}. Based on previous: ${editCheck.basePrompt || 'previous image'}`;
+      } else if (lastUploadedImageRef.current) {
+        imageToEdit = lastUploadedImageRef.current;
+        finalImagePrompt = content;
+      }
     }
     
     // Then check for new image generation
@@ -235,9 +309,9 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
           prompt: finalImagePrompt 
         };
         
-        // If editing, include the last generated image
-        if (editCheck.isEdit && lastGeneratedImageRef.current) {
-          requestBody.editImageUrl = lastGeneratedImageRef.current;
+        // If editing, include the image to edit
+        if (imageToEdit) {
+          requestBody.editImageUrl = imageToEdit;
         }
 
         const response = await fetch(
@@ -432,6 +506,7 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     isGeneratingImage,
     imageRemaining,
     loadingHistory,
+    messageLimitReached,
     sendMessage,
     loadMessages,
     createConversation,

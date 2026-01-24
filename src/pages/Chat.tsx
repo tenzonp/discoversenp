@@ -19,7 +19,7 @@ import ImageGallery from "@/components/ImageGallery";
 import HangingModeSelector from "@/components/chat/HangingModeSelector";
 import { cn } from "@/lib/utils";
 
-const MAX_MESSAGES = 100;
+const MESSAGE_LIMIT = 50;
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
@@ -49,6 +49,7 @@ const Chat = () => {
     isLoading,
     isGeneratingImage,
     imageRemaining,
+    messageLimitReached,
     sendMessage,
     loadMessages,
     deleteConversation,
@@ -69,7 +70,6 @@ const Chat = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<{ focus: () => void; setValue: (value: string) => void } | null>(null);
-  const isLimitReached = messages.length >= MAX_MESSAGES;
 
   // Handle initial state from home page vibes
   useEffect(() => {
@@ -107,7 +107,7 @@ const Chat = () => {
   }, [messages, isLoading]);
 
   const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => {
-    if (isLimitReached) return;
+    if (messageLimitReached) return;
     await extractAndSaveInfo(content);
     
     const moodContext = buildMoodContext();
@@ -219,11 +219,14 @@ const Chat = () => {
         )}
       </div>
 
-      {isLimitReached ? (
+      {messageLimitReached ? (
         <div className="px-5 py-4 bg-background">
-          <p className="text-sm text-muted-foreground/60 text-center">
-            100 message limit. Start fresh!
-          </p>
+          <button 
+            onClick={clearChat}
+            className="w-full py-3 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium transition-all"
+          >
+            ✨ Naya Chat Suru Gara
+          </button>
         </div>
       ) : (
         <ChatInput onSend={handleSend} isLoading={isLoading || isGeneratingImage} currentMode={mode} onModeChange={setMode} />

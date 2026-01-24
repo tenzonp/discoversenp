@@ -76,11 +76,12 @@ serve(async (req) => {
     let messageContent: any;
     
     if (editImageUrl) {
-      // Image editing request
+      // Image editing request - could be editing generated or uploaded image
       messageContent = [
         {
           type: "text",
-          text: `Edit this image: ${prompt}. 
+          text: `Edit this image according to these instructions: ${prompt}
+Make the requested changes while preserving the overall style and quality.
 IMPORTANT: Add a subtle "Discoverse" text watermark in the bottom-right corner.`
         },
         {
