@@ -154,7 +154,7 @@ const Chat = () => {
         conversationId={currentConversationId}
       />
       
-      {/* Hanging Mode Selector */}
+      {/* Hanging Mode Selector - positioned below header */}
       <HangingModeSelector currentMode={mode} onModeChange={setMode} />
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">
