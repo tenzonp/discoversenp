@@ -150,6 +150,7 @@ const Chat = () => {
         onClear={clearChat}
         onShowHistory={() => setShowHistory(true)}
         onShowGallery={() => setShowGallery(true)}
+        conversationId={currentConversationId}
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">

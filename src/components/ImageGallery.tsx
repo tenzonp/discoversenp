@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Download, Trash2, Calendar, Sparkles } from "lucide-react";
+import { X, Download, Trash2, Calendar, Sparkles, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -73,6 +73,39 @@ const ImageGallery = ({ userId, isOpen, onClose }: ImageGalleryProps) => {
         variant: "destructive",
         title: "Download Failed",
         description: "Could not download image",
+      });
+    }
+  };
+
+  const handleShare = async (imageUrl: string, prompt: string | null) => {
+    const caption = `✨ Created with Discoverse AI\n\n"${prompt || 'AI Generated Image'}"\n\n🇳🇵 Nepal's Own AI • discoverse.app`;
+    
+    // Check if Web Share API is available
+    if (navigator.share) {
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "discoverse-creation.png", { type: "image/png" });
+        
+        await navigator.share({
+          title: "Discoverse AI Creation",
+          text: caption,
+          files: [file],
+        });
+      } catch (error) {
+        // Fallback to copying caption
+        await navigator.clipboard.writeText(caption);
+        toast({
+          title: "Caption copied! 📋",
+          description: "Paste it when sharing on social media",
+        });
+      }
+    } else {
+      // Fallback for desktop - copy caption and open Twitter
+      await navigator.clipboard.writeText(caption);
+      toast({
+        title: "Caption copied! 📋",
+        description: "Download the image and paste caption when sharing",
       });
     }
   };
@@ -219,7 +252,14 @@ const ImageGallery = ({ userId, isOpen, onClose }: ImageGalleryProps) => {
               </p>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => selectedImage.image_url && handleShare(selectedImage.image_url, selectedImage.prompt)}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="text-sm font-medium">Share</span>
+                </button>
                 <button
                   onClick={() => selectedImage.image_url && handleDownload(selectedImage.image_url, selectedImage.prompt)}
                   className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
