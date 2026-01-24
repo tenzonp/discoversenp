@@ -15,6 +15,7 @@ import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
 import WebSearchResults from "@/components/chat/WebSearchResults";
+import ImageGallery from "@/components/ImageGallery";
 import { cn } from "@/lib/utils";
 
 const MAX_MESSAGES = 100;
@@ -31,6 +32,7 @@ const Chat = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
   const [showHistory, setShowHistory] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [showMoodCheckin, setShowMoodCheckin] = useState(true);
   
   // Get mode from navigation state or default to friend
@@ -147,6 +149,7 @@ const Chat = () => {
         onBack={() => navigate("/")} 
         onClear={clearChat}
         onShowHistory={() => setShowHistory(true)}
+        onShowGallery={() => setShowGallery(true)}
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">
@@ -229,6 +232,14 @@ const Chat = () => {
           onDelete={deleteConversation}
           onNewChat={clearChat}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {user && (
+        <ImageGallery
+          userId={user.id}
+          isOpen={showGallery}
+          onClose={() => setShowGallery(false)}
         />
       )}
     </div>
