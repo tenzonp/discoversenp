@@ -34,8 +34,8 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  // Check daily usage on mount
-  const checkDailyUsage = useCallback(async () => {
+  // Check daily usage on mount - ALWAYS fetch fresh from DB
+  const checkDailyUsage = useCallback(async (): Promise<number> => {
     if (!user?.id) return FREE_LIMIT_SECONDS;
 
     const today = new Date().toISOString().split("T")[0];
@@ -48,8 +48,12 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
 
     const used = data?.total_seconds || 0;
     const remaining = Math.max(0, FREE_LIMIT_SECONDS - used);
+    
+    // CRITICAL: Always update state with fresh DB value
     setRemainingSeconds(remaining);
     setIsLimitReached(remaining <= 0);
+    
+    console.log(`[Voice] Usage check: used=${used}s, remaining=${remaining}s`);
     return remaining;
   }, [user?.id]);
 
@@ -81,13 +85,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   const forceStopSession = useCallback(async () => {
     const durationToSave = sessionDuration;
     
-    setIsConnected(false);
-    setIsUserSpeaking(false);
-    setIsAISpeaking(false);
-    setCurrentTranscript("");
-    setAiTranscript("");
-    setIsLimitReached(true);
-
+    // Disconnect first
     if (chatRef.current) {
       chatRef.current.disconnect();
       chatRef.current = null;
@@ -98,11 +96,22 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       timerRef.current = null;
     }
 
+    // Save usage BEFORE resetting state
     if (durationToSave > 0) {
       await updateUsage(durationToSave);
     }
 
+    // Reset UI state
+    setIsConnected(false);
+    setIsUserSpeaking(false);
+    setIsAISpeaking(false);
+    setCurrentTranscript("");
+    setAiTranscript("");
     setSessionDuration(0);
+    
+    // CRITICAL: Set remaining to 0 and limit reached AFTER saving
+    setRemainingSeconds(0);
+    setIsLimitReached(true);
     
     toast({
       title: "⏱️ Time's up!",
@@ -216,12 +225,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   const stopSession = useCallback(async () => {
     const durationToSave = sessionDuration;
     
-    setIsConnected(false);
-    setIsUserSpeaking(false);
-    setIsAISpeaking(false);
-    setCurrentTranscript("");
-    setAiTranscript("");
-
+    // Disconnect first
     if (chatRef.current) {
       chatRef.current.disconnect();
       chatRef.current = null;
@@ -232,12 +236,22 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       timerRef.current = null;
     }
 
+    // Save usage
     if (durationToSave > 0) {
       await updateUsage(durationToSave);
     }
 
+    // Reset UI
+    setIsConnected(false);
+    setIsUserSpeaking(false);
+    setIsAISpeaking(false);
+    setCurrentTranscript("");
+    setAiTranscript("");
     setSessionDuration(0);
-  }, [sessionDuration, updateUsage]);
+    
+    // CRITICAL: Refresh remaining seconds from DB after saving
+    await checkDailyUsage();
+  }, [sessionDuration, updateUsage, checkDailyUsage]);
 
   const toggleMute = useCallback(() => {
     if (chatRef.current) {
@@ -251,12 +265,13 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     onClose();
   }, [stopSession, onClose]);
 
-  // Check usage when modal opens
+  // CRITICAL: Check usage EVERY time modal opens - fresh from DB
   useEffect(() => {
-    if (isOpen && !isConnected && !isConnecting) {
+    if (isOpen) {
+      // Always check fresh usage when modal opens
       checkDailyUsage();
     }
-  }, [isOpen, isConnected, isConnecting, checkDailyUsage]);
+  }, [isOpen, checkDailyUsage]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -344,53 +359,84 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       {/* Main Content */}
       {!isLimitReached && (
         <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-          {/* Avatar */}
+          {/* Animated Avatar - Like calling a friend */}
           <div className="relative">
+            {/* Ripple rings when connecting */}
+            {isConnecting && (
+              <>
+                <div className="absolute inset-0 w-32 h-32 -m-4 rounded-full border-2 border-accent/30 animate-ping" />
+                <div className="absolute inset-0 w-28 h-28 -m-2 rounded-full border border-accent/20 animate-pulse" />
+              </>
+            )}
+            
+            {/* Voice waves when AI speaking */}
+            {isAISpeaking && (
+              <>
+                <div className="absolute inset-0 w-32 h-32 -m-4 rounded-full bg-accent/10 animate-voice-wave-1" />
+                <div className="absolute inset-0 w-36 h-36 -m-6 rounded-full bg-accent/5 animate-voice-wave-2" />
+              </>
+            )}
+            
+            {/* Main avatar */}
             <div className={cn(
-              "w-24 h-24 rounded-full bg-card flex items-center justify-center transition-all duration-500 border",
-              isAISpeaking && "scale-110 ring-4 ring-accent/20"
+              "w-24 h-24 rounded-full bg-card flex items-center justify-center transition-all duration-300 border-2 relative z-10",
+              isConnecting && "animate-pulse border-accent/50",
+              isAISpeaking && "scale-105 border-accent shadow-lg shadow-accent/20",
+              isUserSpeaking && "border-primary shadow-lg shadow-primary/20"
             )}>
               <DiscoverseText size="sm" />
             </div>
+            
+            {/* Speaking indicator dots */}
             {isAISpeaking && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                <div className="w-1 h-3 bg-accent rounded-full animate-pulse" />
-                <div className="w-1 h-4 bg-accent rounded-full animate-pulse" style={{ animationDelay: "75ms" }} />
-                <div className="w-1 h-2 bg-accent rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             )}
           </div>
 
-          {/* Transcripts */}
-          <div className="w-full max-w-xs text-center space-y-2 min-h-[60px]">
+          {/* Status & Transcripts */}
+          <div className="w-full max-w-xs text-center space-y-3 min-h-[80px]">
             {isConnecting && (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Connecting...</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-accent">
+                  <Phone className="w-4 h-4 animate-pulse" />
+                  <span className="text-sm font-medium">Calling...</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Connecting to your friend</p>
               </div>
             )}
             
             {isConnected && (
               <>
                 {isUserSpeaking && (
-                  <p className="text-xs text-muted-foreground">🎤 Listening...</p>
+                  <div className="flex items-center justify-center gap-2 text-primary">
+                    <Mic className="w-4 h-4" />
+                    <span className="text-sm">Sunirako...</span>
+                  </div>
                 )}
                 {currentTranscript && (
-                  <p className="text-foreground text-sm">{currentTranscript}</p>
+                  <p className="text-foreground text-sm font-medium">{currentTranscript}</p>
                 )}
                 {aiTranscript && !isUserSpeaking && (
-                  <p className="text-muted-foreground text-sm">"{aiTranscript.slice(-80)}"</p>
+                  <p className="text-muted-foreground text-sm italic">"{aiTranscript.slice(-100)}"</p>
                 )}
-                {!isUserSpeaking && !aiTranscript && !currentTranscript && (
-                  <p className="text-muted-foreground text-sm">Bola...</p>
+                {!isUserSpeaking && !aiTranscript && !currentTranscript && isAISpeaking && (
+                  <p className="text-accent text-sm">Bolirako...</p>
+                )}
+                {!isUserSpeaking && !aiTranscript && !currentTranscript && !isAISpeaking && (
+                  <p className="text-muted-foreground text-sm">Bola na yaar...</p>
                 )}
               </>
             )}
             
             {!isConnected && !isConnecting && (
-              <p className="text-sm text-muted-foreground">
-                Tap to start voice chat
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Ready to call?</p>
+                <p className="text-xs text-muted-foreground">Tap to connect with your Nepali sathi</p>
+              </div>
             )}
           </div>
         </div>
