@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import About from "./pages/About";
 import ProgressDashboard from "./pages/ProgressDashboard";
 import SharedChat from "./pages/SharedChat";
 import NotFound from "./pages/NotFound";
@@ -26,9 +27,9 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/about" element={<About />} />
             <Route path="/progress" element={<ProgressDashboard />} />
             <Route path="/shared" element={<SharedChat />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
