@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
+import DiscoverseText from "@/components/DiscoverseText";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -87,15 +87,12 @@ const Auth = () => {
         <div className="w-full max-w-sm space-y-8">
           {/* Logo */}
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-card flex items-center justify-center">
-              <img src={discoverseLogoNew} alt="Discoverse" className="w-10 h-10 object-contain" />
+            <div className="flex justify-center">
+              <DiscoverseText size="lg" showVersion />
             </div>
-            <div>
-              <h1 className="text-xl font-medium">Discoverse</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {isLogin ? "Welcome back" : "Join us"}
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              {isLogin ? "Welcome back" : "Join us"}
+            </p>
           </div>
 
           {/* Form */}
