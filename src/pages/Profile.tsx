@@ -3,13 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useStreak, levelProgress } from "@/hooks/useStreak";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Leaderboard } from "@/components/Leaderboard";
+import { SubscriptionCard } from "@/components/profile/SubscriptionCard";
+import { UserBehaviorCard } from "@/components/profile/UserBehaviorCard";
+import { EsewaPaymentModal } from "@/components/profile/EsewaPaymentModal";
 import { 
   ArrowLeft, 
   User,
@@ -27,7 +32,8 @@ import {
   Target,
   Calendar,
   Bell,
-  Crown
+  Crown,
+  Sparkles
 } from "lucide-react";
 
 interface Stats {
@@ -52,7 +58,8 @@ const Profile = () => {
   const { user, loading, signOut } = useAuth();
   const { streak, xp } = useStreak();
   const { isSupported: notifSupported, isEnabled: notifEnabled, requestPermission, scheduleStreakReminder } = useNotifications();
-  const [activeTab, setActiveTab] = useState<"stats" | "leaderboard">("stats");
+  const { subscription, messageLimit, voiceMinutes, refresh: refreshSubscription } = useSubscription(user?.id);
+  const [activeTab, setActiveTab] = useState<"stats" | "leaderboard" | "behavior">("stats");
   const [stats, setStats] = useState<Stats>({
     totalChats: 0,
     totalMessages: 0,
@@ -63,6 +70,8 @@ const Profile = () => {
   });
   const [recentScores, setRecentScores] = useState<QuizScore[]>([]);
   const [profile, setProfile] = useState<{ display_name: string | null }>({ display_name: null });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [voiceUsage, setVoiceUsage] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -74,6 +83,7 @@ const Profile = () => {
     if (user) {
       loadStats();
       loadProfile();
+      loadVoiceUsage();
     }
   }, [user]);
 
@@ -87,6 +97,21 @@ const Profile = () => {
     
     if (data) {
       setProfile(data);
+    }
+  };
+
+  const loadVoiceUsage = async () => {
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from("voice_session_usage")
+      .select("total_seconds")
+      .eq("user_id", user.id)
+      .eq("session_date", today)
+      .single();
+    
+    if (data) {
+      setVoiceUsage(Math.round(data.total_seconds / 60));
     }
   };
 
@@ -225,6 +250,18 @@ const Profile = () => {
           </div>
         </div>
 
+        {/* Subscription Card */}
+        <div className="px-4 pb-4">
+          <SubscriptionCard
+            tier={subscription.tier}
+            messageLimit={messageLimit}
+            voiceMinutes={voiceMinutes}
+            voiceUsed={voiceUsage}
+            expiresAt={subscription.expiresAt}
+            onUpgrade={() => setShowPaymentModal(true)}
+          />
+        </div>
+
         {/* Streak & XP */}
         {(streak || xp) && (
           <div className="px-4 pb-4">
@@ -232,7 +269,7 @@ const Profile = () => {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Flame className="w-5 h-5 text-orange-500" />
+                    <Flame className="w-5 h-5 text-destructive" />
                     <div>
                       <p className="text-xl font-bold">{streak?.current_streak || 0}</p>
                       <p className="text-xs text-muted-foreground">Day Streak</p>
@@ -262,28 +299,39 @@ const Profile = () => {
 
         {/* Tab Switcher */}
         <div className="px-4 pb-4">
-          <div className="flex gap-2 p-1 rounded-xl bg-muted">
+          <div className="flex gap-1 p-1 rounded-xl bg-muted">
             <button
               onClick={() => setActiveTab("stats")}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "stats" 
                   ? "bg-background shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <TrendingUp className="w-4 h-4 inline mr-1" />
+              <TrendingUp className="w-3 h-3 inline mr-1" />
               Stats
             </button>
             <button
+              onClick={() => setActiveTab("behavior")}
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "behavior" 
+                  ? "bg-background shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sparkles className="w-3 h-3 inline mr-1" />
+              Profile
+            </button>
+            <button
               onClick={() => setActiveTab("leaderboard")}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "leaderboard" 
                   ? "bg-background shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Crown className="w-4 h-4 inline mr-1" />
-              Leaderboard
+              <Crown className="w-3 h-3 inline mr-1" />
+              Board
             </button>
           </div>
         </div>
@@ -317,10 +365,20 @@ const Profile = () => {
         {activeTab === "leaderboard" ? (
           <div className="px-4 pb-4">
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Crown className="w-4 h-4 text-yellow-500" />
+              <Crown className="w-4 h-4 text-primary" />
               Top Learners
             </h3>
             <Leaderboard />
+          </div>
+        ) : activeTab === "behavior" ? (
+          <div className="px-4 pb-4">
+            {user && (
+              <UserBehaviorCard 
+                userId={user.id} 
+                isPro={subscription.tier !== "free"}
+                onUpdate={() => {}}
+              />
+            )}
           </div>
         ) : (
           <>
@@ -471,6 +529,19 @@ const Profile = () => {
       </div>
 
       <MobileNav />
+
+      {/* eSewa Payment Modal */}
+      {user && (
+        <EsewaPaymentModal
+          open={showPaymentModal}
+          onOpenChange={setShowPaymentModal}
+          userId={user.id}
+          onSuccess={() => {
+            refreshSubscription();
+            setShowPaymentModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };

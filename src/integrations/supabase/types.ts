@@ -391,11 +391,21 @@ export type Database = {
         Row: {
           ai_personality: string | null
           average_session_minutes: number | null
+          communication_style: string | null
+          conversation_depth: number | null
           created_at: string
+          current_focus: string | null
           detected_mood_preference: string | null
+          emotional_openness: number | null
           encouragement_level: string | null
+          energy_level: number | null
+          expertise_level: number | null
+          flirt_level: number | null
+          humor_appreciation: number | null
           id: string
+          interests: Json | null
           learning_style: string | null
+          mood_tendency: string | null
           preferred_pace: string | null
           strong_areas: Json | null
           study_goals: Json | null
@@ -407,11 +417,21 @@ export type Database = {
         Insert: {
           ai_personality?: string | null
           average_session_minutes?: number | null
+          communication_style?: string | null
+          conversation_depth?: number | null
           created_at?: string
+          current_focus?: string | null
           detected_mood_preference?: string | null
+          emotional_openness?: number | null
           encouragement_level?: string | null
+          energy_level?: number | null
+          expertise_level?: number | null
+          flirt_level?: number | null
+          humor_appreciation?: number | null
           id?: string
+          interests?: Json | null
           learning_style?: string | null
+          mood_tendency?: string | null
           preferred_pace?: string | null
           strong_areas?: Json | null
           study_goals?: Json | null
@@ -423,11 +443,21 @@ export type Database = {
         Update: {
           ai_personality?: string | null
           average_session_minutes?: number | null
+          communication_style?: string | null
+          conversation_depth?: number | null
           created_at?: string
+          current_focus?: string | null
           detected_mood_preference?: string | null
+          emotional_openness?: number | null
           encouragement_level?: string | null
+          energy_level?: number | null
+          expertise_level?: number | null
+          flirt_level?: number | null
+          humor_appreciation?: number | null
           id?: string
+          interests?: Json | null
           learning_style?: string | null
+          mood_tendency?: string | null
           preferred_pace?: string | null
           strong_areas?: Json | null
           study_goals?: Json | null

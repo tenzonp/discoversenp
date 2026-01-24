@@ -75,6 +75,81 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
 
   const EXTRACT_TEXT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-text`;
 
+  // Analyze user behavior patterns (runs in background)
+  const analyzeBehaviorPatterns = async (uid: string, message: string) => {
+    try {
+      // Check for behavior patterns in the message
+      const updates: Record<string, any> = {};
+      
+      // Flirty patterns
+      const flirtyPatterns = /😘|❤️|😍|love|baby|sweetheart|darling|miss you|cute|handsome|beautiful|maya|maaya|I love|mero maya/i;
+      if (flirtyPatterns.test(message)) {
+        updates.flirt_level = 2; // Increment
+      }
+      
+      // High energy patterns  
+      const energyPatterns = /!{2,}|excited|amazing|awesome|🎉|🔥|let's go|yeah|yeahhh|wow|superb/i;
+      if (energyPatterns.test(message)) {
+        updates.energy_level = 3;
+      }
+      
+      // Technical expertise
+      const techPatterns = /code|programming|algorithm|database|api|frontend|backend|react|python|javascript|debug|deploy|server|coding/i;
+      if (techPatterns.test(message)) {
+        updates.expertise_level = 2;
+      }
+      
+      // Humor appreciation
+      const humorPatterns = /😂|🤣|lol|lmao|haha|funny|joke|hasna|comedy/i;
+      if (humorPatterns.test(message)) {
+        updates.humor_appreciation = 2;
+      }
+      
+      // Emotional openness
+      const emotionalPatterns = /feel|feeling|sad|happy|anxious|worried|excited|love|hate|scared|stress|depression|tension/i;
+      if (emotionalPatterns.test(message)) {
+        updates.emotional_openness = 2;
+      }
+
+      // Update conversation depth based on message length
+      if (message.length > 100) {
+        updates.conversation_depth = 1;
+      }
+
+      // Only update if we have changes
+      if (Object.keys(updates).length > 0) {
+        // Get current values first
+        const { data: current } = await supabase
+          .from("user_preferences")
+          .select("flirt_level, energy_level, expertise_level, humor_appreciation, emotional_openness, conversation_depth")
+          .eq("user_id", uid)
+          .single();
+
+        const newValues: Record<string, number> = {};
+        if (current) {
+          if (updates.flirt_level) newValues.flirt_level = Math.min((current.flirt_level || 0) + updates.flirt_level, 100);
+          if (updates.energy_level) newValues.energy_level = Math.min((current.energy_level || 50) + updates.energy_level, 100);
+          if (updates.expertise_level) newValues.expertise_level = Math.min((current.expertise_level || 0) + updates.expertise_level, 100);
+          if (updates.humor_appreciation) newValues.humor_appreciation = Math.min((current.humor_appreciation || 50) + updates.humor_appreciation, 100);
+          if (updates.emotional_openness) newValues.emotional_openness = Math.min((current.emotional_openness || 50) + updates.emotional_openness, 100);
+          if (updates.conversation_depth) newValues.conversation_depth = Math.min((current.conversation_depth || 50) + updates.conversation_depth, 100);
+        }
+
+        if (Object.keys(newValues).length > 0) {
+          await supabase
+            .from("user_preferences")
+            .upsert({
+              user_id: uid,
+              ...newValues,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
+        }
+      }
+    } catch (error) {
+      console.error("Behavior analysis error:", error);
+    }
+  };
+
   // Load user's conversations
   const loadConversations = useCallback(async () => {
     if (!userId) return;
@@ -520,6 +595,9 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
         if (messages.length === 0) {
           await updateConversationTitle(convId, content.slice(0, 50));
         }
+        
+        // Analyze user behavior patterns in background (don't await)
+        analyzeBehaviorPatterns(userId, content).catch(console.error);
       }
     } catch (error) {
       console.error("Chat error:", error);
