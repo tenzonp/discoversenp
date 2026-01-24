@@ -13,7 +13,6 @@ import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ConversationList } from "@/components/chat/ConversationList";
 import ModeSelector, { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
-import VoiceChatModal from "@/components/chat/VoiceChatModal";
 import WebSearchResults from "@/components/chat/WebSearchResults";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +30,6 @@ const Chat = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
   const [showHistory, setShowHistory] = useState(false);
-  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const [showMoodCheckin, setShowMoodCheckin] = useState(true);
   const [mode, setMode] = useState<ChatMode>("friend");
   const [hasProcessedInitialState, setHasProcessedInitialState] = useState(false);
@@ -138,12 +136,6 @@ const Chat = () => {
     loadMoodHistory();
   };
 
-  const handleVoiceTranscript = (text: string, role: "user" | "assistant") => {
-    if (role === "user" && text.trim()) {
-      handleSend(text);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[100dvh] bg-background">
@@ -246,12 +238,6 @@ const Chat = () => {
           onClose={() => setShowHistory(false)}
         />
       )}
-
-      <VoiceChatModal
-        isOpen={showVoiceChat}
-        onClose={() => setShowVoiceChat(false)}
-        onTranscriptAdd={handleVoiceTranscript}
-      />
     </div>
   );
 };

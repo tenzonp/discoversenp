@@ -1,10 +1,9 @@
-import { ArrowLeft, MoreVertical, Trash2, History } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Trash2, History, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
+import { useState } from "react";
+import VoiceChatModal from "./VoiceChatModal";
 
 interface ChatHeaderProps {
   onBack: () => void;
@@ -13,52 +12,65 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
-  return (
-    <header className="flex items-center justify-between px-5 py-4 bg-background safe-area-top">
-      {/* Left - Back */}
-      <button
-        onClick={onBack}
-        className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
-        aria-label="Back"
-      >
-        <ArrowLeft className="w-4 h-4 text-muted-foreground/70" />
-      </button>
-      
-      {/* Center - Minimal identity */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
-          <span className="text-accent text-xs font-medium">भ</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-teal/70 animate-breathe" />
-          <span className="text-xs text-muted-foreground/60">Online</span>
-        </div>
-      </div>
+  const [showVoice, setShowVoice] = useState(false);
 
-      {/* Right - Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors duration-300"
-            aria-label="More options"
+  return (
+    <>
+      <header className="flex items-center justify-between px-4 py-3 bg-background/80 backdrop-blur-sm sticky top-0 z-40 safe-area-top">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onBack}
+            className="w-8 h-8 rounded-full"
           >
-            <MoreVertical className="w-4 h-4 text-muted-foreground/50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40 rounded-xl border-border/50">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center">
+              <img src={discoverseLogoNew} alt="" className="w-5 h-5 object-contain" />
+            </div>
+            <span className="font-medium text-sm">Discoverse</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowVoice(true)}
+            className="w-8 h-8 rounded-full text-accent"
+          >
+            <Phone className="w-4 h-4" />
+          </Button>
           {onShowHistory && (
-            <DropdownMenuItem onClick={onShowHistory} className="gap-2 py-2.5 rounded-lg text-muted-foreground">
-              <History className="w-3.5 h-3.5" />
-              <span className="text-sm">History</span>
-            </DropdownMenuItem>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShowHistory}
+              className="w-8 h-8 rounded-full"
+            >
+              <History className="w-4 h-4" />
+            </Button>
           )}
-          <DropdownMenuItem onClick={onClear} className="gap-2 py-2.5 rounded-lg text-destructive/80 focus:text-destructive">
-            <Trash2 className="w-3.5 h-3.5" />
-            <span className="text-sm">Clear</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </header>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClear}
+            className="w-8 h-8 rounded-full"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      <VoiceChatModal 
+        isOpen={showVoice} 
+        onClose={() => setShowVoice(false)} 
+      />
+    </>
   );
 };
 

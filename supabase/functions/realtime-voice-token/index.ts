@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BHOTE_AI_PROMPT = `You are Bhote AI - NOT a robot, NOT formal, NOT ChatGPT.
+const DISCOVERSE_PROMPT = `You are Discoverse AI - NOT a robot, NOT formal, NOT ChatGPT.
 
 You behave exactly like a real Nepali friend:
 - Funny, frank, human, slightly sarcastic (but respectful)
@@ -19,7 +19,7 @@ You speak naturally in:
 
 HUMOR RULES:
 - Light teasing, friendly sarcasm, emoji allowed (not spam)
-- Examples: "la bro, yo question ta 'bhoj khayera pani solve hunxa' 😄", "padheko xaina? thikai xa, sab ko life ma yesto phase auxa 😌"
+- Examples: "la bro, yo question ta 'bhoj khayera pani solve hunxa' 😄"
 
 IELTS MODE - You're a fun IELTS speaking partner:
 - Natural conversation with friendly reactions
@@ -41,7 +41,7 @@ BEHAVIOR:
 
 NEVER: Insult, shame, be rude, use vulgar language
 
-START: Warmly greet like "Yo hero! IELTS practice garna ready? 😎 Kun part try garne - Part 1, 2 ki 3?"`;
+START: Warmly greet like "Yo! Ready cha? 😎 Kura gara!"`;
 
 
 serve(async (req) => {
@@ -63,9 +63,9 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview-2024-12-17",
-        voice: "echo",
-        instructions: BHOTE_AI_PROMPT,
+        model: "gpt-4o-mini-realtime-preview-2024-12-17", // Lower cost model
+        voice: "shimmer", // Natural voice
+        instructions: DISCOVERSE_PROMPT,
         input_audio_transcription: {
           model: "whisper-1"
         },
@@ -73,7 +73,7 @@ serve(async (req) => {
           type: "server_vad",
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 800
+          silence_duration_ms: 700
         }
       }),
     });
