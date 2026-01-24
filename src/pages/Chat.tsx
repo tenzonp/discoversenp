@@ -20,7 +20,7 @@ import WebSearchResults from "@/components/chat/WebSearchResults";
 import ImageGallery from "@/components/ImageGallery";
 import HangingModeSelector from "@/components/chat/HangingModeSelector";
 import RecentImagesBar from "@/components/chat/RecentImagesBar";
-import ExamClassSelector, { ExamClass, ExamSubject } from "@/components/chat/ExamClassSelector";
+import ExamClassSelector, { ExamClass, ExamStream, ExamGroup, ExamSubject } from "@/components/chat/ExamClassSelector";
 import { cn } from "@/lib/utils";
 import { GraduationCap } from "lucide-react";
 
@@ -43,6 +43,14 @@ const Chat = () => {
   const [examClass, setExamClass] = useState<ExamClass>(() => {
     const saved = localStorage.getItem("discoverse_exam_class");
     return (saved as ExamClass) || null;
+  });
+  const [examStream, setExamStream] = useState<ExamStream>(() => {
+    const saved = localStorage.getItem("discoverse_exam_stream");
+    return (saved as ExamStream) || null;
+  });
+  const [examGroup, setExamGroup] = useState<ExamGroup>(() => {
+    const saved = localStorage.getItem("discoverse_exam_group");
+    return (saved as ExamGroup) || null;
   });
   const [examSubject, setExamSubject] = useState<ExamSubject>(() => {
     const saved = localStorage.getItem("discoverse_exam_subject");
@@ -140,13 +148,11 @@ const Chat = () => {
 
   // Save exam preferences
   useEffect(() => {
-    if (examClass) {
-      localStorage.setItem("discoverse_exam_class", examClass);
-    }
-    if (examSubject) {
-      localStorage.setItem("discoverse_exam_subject", examSubject);
-    }
-  }, [examClass, examSubject]);
+    if (examClass) localStorage.setItem("discoverse_exam_class", examClass);
+    if (examStream) localStorage.setItem("discoverse_exam_stream", examStream);
+    if (examGroup) localStorage.setItem("discoverse_exam_group", examGroup);
+    if (examSubject) localStorage.setItem("discoverse_exam_subject", examSubject);
+  }, [examClass, examStream, examGroup, examSubject]);
 
   // Show exam selector when entering exam mode without class selected
   useEffect(() => {
@@ -155,22 +161,30 @@ const Chat = () => {
     }
   }, [mode, examClass]);
 
-  // Build exam-focused search query
+  // Build exam-focused search query with enhanced subject-specific keywords
   const buildExamSearchQuery = (content: string): string => {
     if (mode !== "exam" || !examClass) return content;
     
+    const classNum = parseInt(examClass);
+    const curriculum = classNum <= 10 ? "SEE Nepal Board" : `NEB +2 ${examStream || "science"} Nepal`;
+    
     const subjectMap: Record<ExamSubject, string> = {
       all: "",
-      math: "mathematics",
-      science: "science physics chemistry biology",
-      english: "english grammar",
-      social: "social studies history geography civics",
+      math: "mathematics algebra geometry trigonometry calculus step by step solution with formula",
+      physics: "physics numericals derivation formula diagram explanation",
+      chemistry: "chemistry reaction mechanism equation balancing organic inorganic",
+      biology: "biology diagram labeling explanation process",
+      computer: "computer science programming algorithm flowchart",
+      english: "english grammar essay letter writing comprehension",
+      nepali: "nepali vyakaran nibandha",
+      social: "social studies history geography civics economics",
+      accountancy: "accountancy journal ledger trial balance financial statement",
+      economics: "economics microeconomics macroeconomics theory diagram",
     };
     
     const subjectKeywords = subjectMap[examSubject] || "";
-    const gradeLevel = parseInt(examClass) <= 10 ? "SEE Nepal" : "NEB +2 Nepal";
     
-    return `Class ${examClass} ${subjectKeywords} ${gradeLevel} ${content} solution explanation step by step`;
+    return `Class ${examClass} ${curriculum} ${subjectKeywords} ${content} solution explanation step by step with working`;
   };
 
   const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => {
@@ -250,8 +264,12 @@ INSTRUCTIONS FOR EXAM MODE:
       {showExamSelector && (
         <ExamClassSelector
           selectedClass={examClass}
+          selectedStream={examStream}
+          selectedGroup={examGroup}
           selectedSubject={examSubject}
           onClassChange={setExamClass}
+          onStreamChange={setExamStream}
+          onGroupChange={setExamGroup}
           onSubjectChange={setExamSubject}
           onClose={() => setShowExamSelector(false)}
         />
@@ -317,6 +335,7 @@ INSTRUCTIONS FOR EXAM MODE:
               onSuggestionClick={(s) => handleSend(s)} 
               mode={mode}
               examClass={examClass}
+              examStream={examStream}
               examSubject={examSubject}
             />
           </div>
