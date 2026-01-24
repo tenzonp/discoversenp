@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft, Mail, KeyRound, User, Sparkles, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +13,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 type AuthMode = "otp" | "password";
 type AuthStep = "email" | "otp" | "password-login" | "signup-details" | "forgot-password" | "reset-password";
+
+const REMEMBER_ME_KEY = "discoverse_remember_me";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -29,6 +32,29 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isSignup, setIsSignup] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    const saved = localStorage.getItem(REMEMBER_ME_KEY);
+    return saved !== "false"; // Default to true
+  });
+
+  // Handle session cleanup on browser close if "Remember Me" is unchecked
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const shouldRemember = localStorage.getItem(REMEMBER_ME_KEY);
+      if (shouldRemember === "false") {
+        // Clear session data when browser closes
+        supabase.auth.signOut();
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  // Save remember me preference
+  useEffect(() => {
+    localStorage.setItem(REMEMBER_ME_KEY, String(rememberMe));
+  }, [rememberMe]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -558,7 +584,17 @@ const Auth = () => {
                   )}
 
                   {!isSignup && (
-                    <div className="text-right">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="rememberMe" 
+                          checked={rememberMe}
+                          onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        />
+                        <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+                          Remember me
+                        </Label>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setStep("forgot-password")}
@@ -591,9 +627,21 @@ const Auth = () => {
               </Button>
 
               {mode === "otp" && (
-                <p className="text-xs text-center text-muted-foreground">
-                  We'll send a 6-digit code to your email. No password needed!
-                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center space-x-2">
+                    <Checkbox 
+                      id="rememberMeOtp" 
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    />
+                    <Label htmlFor="rememberMeOtp" className="text-sm text-muted-foreground cursor-pointer">
+                      Remember me on this device
+                    </Label>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">
+                    We'll send a 6-digit code to your email. No password needed!
+                  </p>
+                </div>
               )}
 
               {mode === "password" && (
