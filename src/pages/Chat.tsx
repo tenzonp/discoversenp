@@ -16,6 +16,7 @@ import { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
 import WebSearchResults from "@/components/chat/WebSearchResults";
 import ImageGallery from "@/components/ImageGallery";
+import HangingModeSelector from "@/components/chat/HangingModeSelector";
 import { cn } from "@/lib/utils";
 
 const MAX_MESSAGES = 100;
@@ -144,7 +145,7 @@ const Chat = () => {
   const greeting = modeGreetings[mode];
 
   return (
-    <div className={cn("flex flex-col h-[100dvh] bg-background", `vibe-${mode}`)}>
+    <div className={cn("flex flex-col h-[100dvh] bg-background relative", `vibe-${mode}`)}>
       <ChatHeader 
         onBack={() => navigate("/")} 
         onClear={clearChat}
@@ -152,6 +153,9 @@ const Chat = () => {
         onShowGallery={() => setShowGallery(true)}
         conversationId={currentConversationId}
       />
+      
+      {/* Hanging Mode Selector */}
+      <HangingModeSelector currentMode={mode} onModeChange={setMode} />
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">
         {/* Web Search Results */}
