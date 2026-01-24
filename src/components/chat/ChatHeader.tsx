@@ -35,7 +35,7 @@ const ChatHeader = ({ onBack, onClear, onShowHistory, onShowGallery, onShareChat
       return;
     }
     
-    const shareUrl = `${window.location.origin}/chat?shared=${conversationId}`;
+    const shareUrl = `${window.location.origin}/shared?id=${conversationId}`;
     await navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Link copied! 🔗",
