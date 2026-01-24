@@ -32,6 +32,8 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   
   const chatRef = useRef<RealtimeVoiceChat | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionDurationRef = useRef(0); // Track actual duration to avoid stale closure
+  const remainingSecondsRef = useRef(FREE_LIMIT_SECONDS);
   const { toast } = useToast();
 
   // Check daily usage on mount - ALWAYS fetch fresh from DB
@@ -49,8 +51,9 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     const used = data?.total_seconds || 0;
     const remaining = Math.max(0, FREE_LIMIT_SECONDS - used);
     
-    // CRITICAL: Always update state with fresh DB value
+    // CRITICAL: Update both state AND ref with fresh DB value
     setRemainingSeconds(remaining);
+    remainingSecondsRef.current = remaining;
     setIsLimitReached(remaining <= 0);
     
     console.log(`[Voice] Usage check: used=${used}s, remaining=${remaining}s`);
@@ -81,25 +84,34 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     }
   }, [user?.id]);
 
-  // STRICT: Force stop session when limit reached
+  // STRICT: Force stop session when limit reached - uses refs to avoid stale closure
   const forceStopSession = useCallback(async () => {
-    const durationToSave = sessionDuration;
+    // Use ref value, not state (avoids stale closure)
+    const durationToSave = sessionDurationRef.current;
     
-    // Disconnect first
-    if (chatRef.current) {
-      chatRef.current.disconnect();
-      chatRef.current = null;
-    }
-
+    console.log(`[Voice] Force stop - saving ${durationToSave}s`);
+    
+    // Stop timer FIRST
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    // Save usage BEFORE resetting state
+    // Disconnect
+    if (chatRef.current) {
+      chatRef.current.disconnect();
+      chatRef.current = null;
+    }
+
+    // Save usage BEFORE resetting - this is critical!
     if (durationToSave > 0) {
       await updateUsage(durationToSave);
+      console.log(`[Voice] Saved ${durationToSave}s to DB`);
     }
+
+    // Reset refs
+    sessionDurationRef.current = 0;
+    remainingSecondsRef.current = 0;
 
     // Reset UI state
     setIsConnected(false);
@@ -117,7 +129,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       title: "⏱️ Time's up!",
       description: "3 minute free limit reached. Pay to continue.",
     });
-  }, [sessionDuration, updateUsage, toast]);
+  }, [updateUsage, toast]);
 
   // Handle realtime messages
   const handleMessage = useCallback((event: RealtimeMessage) => {
@@ -191,19 +203,21 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       setIsConnected(true);
       setIsConnecting(false);
       setSessionDuration(0);
+      sessionDurationRef.current = 0;
+      remainingSecondsRef.current = remaining;
 
-      // Timer that STRICTLY enforces limit
+      // Timer that STRICTLY enforces limit using refs
       timerRef.current = setInterval(() => {
-        setSessionDuration(prev => prev + 1);
-        setRemainingSeconds(r => {
-          const newRemaining = r - 1;
-          // STRICT: Force stop at 0
-          if (newRemaining <= 0) {
-            forceStopSession();
-            return 0;
-          }
-          return newRemaining;
-        });
+        sessionDurationRef.current += 1;
+        remainingSecondsRef.current -= 1;
+        
+        setSessionDuration(sessionDurationRef.current);
+        setRemainingSeconds(remainingSecondsRef.current);
+        
+        // STRICT: Force stop at 0
+        if (remainingSecondsRef.current <= 0) {
+          forceStopSession();
+        }
       }, 1000);
 
       toast({
@@ -223,23 +237,31 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   }, [checkDailyUsage, handleMessage, handleTranscript, handleSpeakingChange, forceStopSession, toast]);
 
   const stopSession = useCallback(async () => {
-    const durationToSave = sessionDuration;
+    // Use ref for accurate duration
+    const durationToSave = sessionDurationRef.current;
     
-    // Disconnect first
-    if (chatRef.current) {
-      chatRef.current.disconnect();
-      chatRef.current = null;
-    }
-
+    console.log(`[Voice] Stop session - saving ${durationToSave}s`);
+    
+    // Stop timer FIRST
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
+    // Disconnect
+    if (chatRef.current) {
+      chatRef.current.disconnect();
+      chatRef.current = null;
+    }
+
     // Save usage
     if (durationToSave > 0) {
       await updateUsage(durationToSave);
+      console.log(`[Voice] Saved ${durationToSave}s to DB`);
     }
+
+    // Reset refs
+    sessionDurationRef.current = 0;
 
     // Reset UI
     setIsConnected(false);
@@ -251,7 +273,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
     
     // CRITICAL: Refresh remaining seconds from DB after saving
     await checkDailyUsage();
-  }, [sessionDuration, updateUsage, checkDailyUsage]);
+  }, [updateUsage, checkDailyUsage]);
 
   const toggleMute = useCallback(() => {
     if (chatRef.current) {
