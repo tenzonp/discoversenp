@@ -29,12 +29,12 @@ import {
   TrendingUp,
   Flame,
   Zap,
-  Layers,
   Target,
   Calendar,
   Bell,
   Crown,
-  Sparkles
+  Sparkles,
+  Info
 } from "lucide-react";
 
 interface Stats {
@@ -508,6 +508,19 @@ const Profile = () => {
                   <BookOpen className="w-5 h-5 text-accent" />
                 </div>
                 <span className="font-medium">Exam Mode</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            <button
+              onClick={() => navigate("/about")}
+              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                  <Info className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="font-medium">About Discoverse</span>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>

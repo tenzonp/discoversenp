@@ -279,29 +279,28 @@ INSTRUCTIONS FOR EXAM MODE:
         />
       )}
 
-      {/* Exam Mode Active Badge with Formula Sheet & Notes */}
+      {/* Exam Mode - Minimal Badge */}
       {mode === "exam" && examClass && (
-        <div className="px-4 py-2 bg-primary/5 border-b border-primary/10">
-          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
+        <div className="px-4 py-2">
+          <div className="flex items-center gap-2 max-w-2xl mx-auto">
             <button
               onClick={() => setShowExamSelector(true)}
-              className="flex items-center gap-2 py-2 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
+              className="flex items-center gap-2 py-1.5 px-3 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors text-sm"
             >
               <GraduationCap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
-                Class {examClass} • {examSubject === "all" ? "All Subjects" : examSubject.charAt(0).toUpperCase() + examSubject.slice(1)}
+              <span className="font-medium text-primary">
+                {examClass} • {examSubject === "all" ? "All" : examSubject.charAt(0).toUpperCase() + examSubject.slice(1)}
               </span>
             </button>
             
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1">
               <DailyQuestionsPanel
                 classLevel={`Class ${examClass}`}
                 stream={examStream || undefined}
                 subject={examSubject}
                 trigger={
-                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-primary/20 hover:bg-primary/30 transition-colors text-xs font-medium text-primary">
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    Daily Q
+                  <button className="p-2 rounded-full hover:bg-muted transition-colors" title="Daily Questions">
+                    <Lightbulb className="w-4 h-4 text-muted-foreground" />
                   </button>
                 }
                 onAskQuestion={(q) => handleSend(q)}
@@ -309,9 +308,8 @@ INSTRUCTIONS FOR EXAM MODE:
               <FormulaSheet 
                 classLevel={`Class ${examClass}`}
                 trigger={
-                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
-                    <Calculator className="w-3.5 h-3.5" />
-                    Formulas
+                  <button className="p-2 rounded-full hover:bg-muted transition-colors" title="Formulas">
+                    <Calculator className="w-4 h-4 text-muted-foreground" />
                   </button>
                 }
               />
@@ -319,18 +317,16 @@ INSTRUCTIONS FOR EXAM MODE:
                 userId={user?.id}
                 category={examSubject !== 'all' ? examSubject : undefined}
                 trigger={
-                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
-                    <Layers className="w-3.5 h-3.5" />
-                    Cards
+                  <button className="p-2 rounded-full hover:bg-muted transition-colors" title="Flashcards">
+                    <Layers className="w-4 h-4 text-muted-foreground" />
                   </button>
                 }
               />
               <StudyNotesPanel 
                 userId={user?.id}
                 trigger={
-                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    Notes
+                  <button className="p-2 rounded-full hover:bg-muted transition-colors" title="Notes">
+                    <BookOpen className="w-4 h-4 text-muted-foreground" />
                   </button>
                 }
                 onInsertToChat={(content) => handleSend(content)}
