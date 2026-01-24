@@ -360,6 +360,48 @@ export type Database = {
         }
         Relationships: []
       }
+      study_notes: {
+        Row: {
+          class_level: string | null
+          content: string
+          created_at: string
+          id: string
+          is_formula: boolean | null
+          source_message_id: string | null
+          subject: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_level?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_formula?: boolean | null
+          source_message_id?: string | null
+          subject?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_level?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_formula?: boolean | null
+          source_message_id?: string | null
+          subject?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_memory: {
         Row: {
           created_at: string

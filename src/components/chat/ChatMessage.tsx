@@ -1,21 +1,28 @@
-import { Copy, Check, Volume2, VolumeX } from "lucide-react";
+import { Copy, Check, Volume2, VolumeX, Bookmark, BookmarkCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { Message } from "@/hooks/useChatHistory";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useStudyNotes } from "@/hooks/useStudyNotes";
+import { toast } from "sonner";
 
 interface ChatMessageProps {
   message: Message;
   autoSpeak?: boolean;
   isLatest?: boolean;
+  userId?: string;
+  examClass?: string;
+  examSubject?: string;
 }
 
-const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessageProps) => {
+const ChatMessage = ({ message, autoSpeak = false, isLatest = false, userId, examClass, examSubject }: ChatMessageProps) => {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [visible, setVisible] = useState(!isLatest);
   const { speak, stop, isSpeaking, isEnabled } = useTextToSpeech();
   const [hasSpoken, setHasSpoken] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const { saveNote, generateTitleFromContent, detectSubjectFromContent } = useStudyNotes();
 
   // Human-like delayed appearance
   useEffect(() => {
@@ -56,6 +63,29 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessa
       stop();
     } else {
       speak(textContent || "Generated image");
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!userId || !textContent) {
+      toast.error('Please log in to save notes');
+      return;
+    }
+    
+    const title = generateTitleFromContent(textContent);
+    const detectedSubject = examSubject || detectSubjectFromContent(textContent);
+    
+    const result = await saveNote({
+      userId,
+      title,
+      content: textContent,
+      subject: detectedSubject,
+      classLevel: examClass || undefined,
+      sourceMessageId: message.id
+    });
+    
+    if (result) {
+      setIsSaved(true);
     }
   };
 
@@ -123,9 +153,23 @@ const ChatMessage = ({ message, autoSpeak = false, isLatest = false }: ChatMessa
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-teal" />
               ) : (
-                <Copy className="w-3.5 h-3.5 text-muted-foreground/50" />
+              <Copy className="w-3.5 h-3.5 text-muted-foreground/50" />
+            )}
+          </button>
+          {userId && (
+            <button
+              onClick={handleSaveNote}
+              className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+              title={isSaved ? "Saved" : "Save to notes"}
+              disabled={isSaved}
+            >
+              {isSaved ? (
+                <BookmarkCheck className="w-3.5 h-3.5 text-primary" />
+              ) : (
+                <Bookmark className="w-3.5 h-3.5 text-muted-foreground/50" />
               )}
             </button>
+          )}
           </div>
         )}
       </div>

@@ -21,8 +21,10 @@ import ImageGallery from "@/components/ImageGallery";
 import HangingModeSelector from "@/components/chat/HangingModeSelector";
 import RecentImagesBar from "@/components/chat/RecentImagesBar";
 import ExamClassSelector, { ExamClass, ExamStream, ExamGroup, ExamSubject } from "@/components/chat/ExamClassSelector";
+import { FormulaSheet } from "@/components/chat/FormulaSheet";
+import { StudyNotesPanel } from "@/components/chat/StudyNotesPanel";
 import { cn } from "@/lib/utils";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Calculator, BookOpen } from "lucide-react";
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
@@ -275,19 +277,42 @@ INSTRUCTIONS FOR EXAM MODE:
         />
       )}
 
-      {/* Exam Mode Active Badge */}
+      {/* Exam Mode Active Badge with Formula Sheet & Notes */}
       {mode === "exam" && examClass && (
         <div className="px-4 py-2 bg-primary/5 border-b border-primary/10">
-          <button
-            onClick={() => setShowExamSelector(true)}
-            className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
-          >
-            <GraduationCap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              Class {examClass} • {examSubject === "all" ? "All Subjects" : examSubject.charAt(0).toUpperCase() + examSubject.slice(1)}
-            </span>
-            <span className="text-xs text-muted-foreground ml-2">Tap to change</span>
-          </button>
+          <div className="flex items-center justify-between gap-2 max-w-2xl mx-auto">
+            <button
+              onClick={() => setShowExamSelector(true)}
+              className="flex items-center gap-2 py-2 px-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
+            >
+              <GraduationCap className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                Class {examClass} • {examSubject === "all" ? "All Subjects" : examSubject.charAt(0).toUpperCase() + examSubject.slice(1)}
+              </span>
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <FormulaSheet 
+                classLevel={`Class ${examClass}`}
+                trigger={
+                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
+                    <Calculator className="w-3.5 h-3.5" />
+                    Formulas
+                  </button>
+                }
+              />
+              <StudyNotesPanel 
+                userId={user?.id}
+                trigger={
+                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Notes
+                  </button>
+                }
+                onInsertToChat={(content) => handleSend(content)}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -346,6 +371,9 @@ INSTRUCTIONS FOR EXAM MODE:
                 key={message.id} 
                 message={message} 
                 isLatest={index === messages.length - 1}
+                userId={user?.id}
+                examClass={mode === "exam" ? examClass || undefined : undefined}
+                examSubject={mode === "exam" && examSubject !== "all" ? examSubject : undefined}
               />
             ))}
             {isGeneratingImage && (
