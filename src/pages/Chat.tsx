@@ -11,7 +11,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ConversationList } from "@/components/chat/ConversationList";
-import ModeSelector, { ChatMode } from "@/components/chat/ModeSelector";
+import { ChatMode } from "@/components/chat/ModeSelector";
 import MoodCheckin from "@/components/chat/MoodCheckin";
 import WebSearchResults from "@/components/chat/WebSearchResults";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,11 @@ const Chat = () => {
   const { user, loading } = useAuth();
   const [showHistory, setShowHistory] = useState(false);
   const [showMoodCheckin, setShowMoodCheckin] = useState(true);
-  const [mode, setMode] = useState<ChatMode>("friend");
+  
+  // Get mode from navigation state or default to friend
+  const initialMode = (location.state as { mode?: ChatMode } | null)?.mode || "friend";
+  const [mode] = useState<ChatMode>(initialMode);
+  
   const [hasProcessedInitialState, setHasProcessedInitialState] = useState(false);
   
   const {
@@ -61,7 +65,7 @@ const Chat = () => {
   const inputRef = useRef<{ focus: () => void; setValue: (value: string) => void } | null>(null);
   const isLimitReached = messages.length >= MAX_MESSAGES;
 
-  // Handle initial state from home page vibes - ONLY AUTO-SEND FOR NON-STUDY MODES
+  // Handle initial state from home page vibes
   useEffect(() => {
     if (hasProcessedInitialState) return;
     
@@ -70,18 +74,13 @@ const Chat = () => {
     if (state && user && !loading) {
       setHasProcessedInitialState(true);
       
-      // If mode is specified, switch to it
-      if (state.mode) {
-        setMode(state.mode);
-      }
-      
-      // For study/exam mode, just focus the input - don't auto-send
+      // For study/exam mode, just focus the input
       if (state.focusInput) {
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);
       }
-      // For other vibes with initialMessage, auto-send as before
+      // For other vibes with initialMessage, auto-send
       else if (state.initialMessage) {
         handleSend(state.initialMessage);
       }
@@ -100,13 +99,6 @@ const Chat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
-
-  const handleModeChange = (newMode: ChatMode) => {
-    if (newMode !== mode) {
-      setMode(newMode);
-      clearChat();
-    }
-  };
 
   const handleSend = async (content: string, imageUrl?: string, generateImagePrompt?: string, webSearchQuery?: string) => {
     if (isLimitReached) return;
@@ -153,11 +145,6 @@ const Chat = () => {
         onClear={clearChat}
         onShowHistory={() => setShowHistory(true)}
       />
-
-      {/* Mode Selector - Subtle, ambient */}
-      <div className="px-5 py-3 bg-background">
-        <ModeSelector currentMode={mode} onModeChange={handleModeChange} />
-      </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-subtle">
         {/* Web Search Results */}

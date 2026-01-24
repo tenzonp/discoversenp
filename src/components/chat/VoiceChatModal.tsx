@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, Mic, MicOff, Phone, PhoneOff, Loader2, Volume2, AlertCircle } from "lucide-react";
+import { X, Mic, MicOff, Phone, PhoneOff, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeVoiceChat, EmotionMetrics, RealtimeMessage } from "@/utils/RealtimeVoiceChat";
 import { useAuth } from "@/hooks/useAuth";
-import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
+import DiscoverseText from "@/components/DiscoverseText";
 
 const FREE_LIMIT_SECONDS = 180; // 3 minutes for free users
 
@@ -27,7 +27,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   const [aiTranscript, setAiTranscript] = useState("");
   const [sessionDuration, setSessionDuration] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(FREE_LIMIT_SECONDS);
-  const [showPaywall, setShowPaywall] = useState(false);
+  const [isOverLimit, setIsOverLimit] = useState(false);
   const [emotionMetrics, setEmotionMetrics] = useState<EmotionMetrics | null>(null);
   
   const chatRef = useRef<RealtimeVoiceChat | null>(null);
@@ -47,8 +47,9 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
       .single();
 
     const used = data?.total_seconds || 0;
-    const remaining = Math.max(0, FREE_LIMIT_SECONDS - used);
+    const remaining = FREE_LIMIT_SECONDS - used;
     setRemainingSeconds(remaining);
+    setIsOverLimit(remaining <= 0);
     return remaining;
   }, [user?.id]);
 
@@ -119,12 +120,7 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   }, []);
 
   const startSession = useCallback(async () => {
-    const remaining = await checkDailyUsage();
-    
-    if (remaining <= 0) {
-      setShowPaywall(true);
-      return;
-    }
+    await checkDailyUsage();
 
     try {
       setIsConnecting(true);
@@ -148,10 +144,10 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
         setSessionDuration(prev => {
           const newDuration = prev + 1;
           setRemainingSeconds(r => {
-            const newRemaining = Math.max(0, r - 1);
+            const newRemaining = r - 1;
+            // Just track - don't stop the session
             if (newRemaining <= 0) {
-              stopSession();
-              setShowPaywall(true);
+              setIsOverLimit(true);
             }
             return newRemaining;
           });
@@ -210,11 +206,11 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
 
   const handleClose = useCallback(() => {
     stopSession();
-    setShowPaywall(false);
+    setIsOverLimit(false);
     onClose();
   }, [stopSession, onClose]);
 
-  // Auto-connect when modal opens
+  // Check usage when modal opens
   useEffect(() => {
     if (isOpen && !isConnected && !isConnecting) {
       checkDailyUsage();
@@ -230,60 +226,14 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
   }, []);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const absSeconds = Math.abs(seconds);
+    const mins = Math.floor(absSeconds / 60);
+    const secs = absSeconds % 60;
+    const sign = seconds < 0 ? "-" : "";
+    return `${sign}${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   if (!isOpen) return null;
-
-  // Paywall Screen
-  if (showPaywall) {
-    return (
-      <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-sm text-center space-y-6">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-accent/10 flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-accent" />
-          </div>
-          
-          <div className="space-y-2">
-            <h2 className="text-xl font-medium">Free limit reached</h2>
-            <p className="text-muted-foreground text-sm">
-              3 minutes/day free ma sakiyo. 30 min unlock garna pay gara!
-            </p>
-          </div>
-
-          <div className="bg-card rounded-2xl p-6 space-y-4">
-            <div className="text-center">
-              <span className="text-3xl font-bold">Rs. 50</span>
-              <span className="text-muted-foreground ml-1">/30 min</span>
-            </div>
-            
-            <Button 
-              className="w-full h-12 rounded-xl"
-              onClick={() => {
-                window.open("https://esewa.com.np", "_blank");
-                toast({
-                  title: "eSewa Payment",
-                  description: "Pay Rs. 50 and send screenshot to activate 30 min.",
-                });
-              }}
-            >
-              Pay with eSewa
-            </Button>
-            
-            <p className="text-xs text-muted-foreground">
-              eSewa ma pay garera screenshot pathau
-            </p>
-          </div>
-
-          <Button variant="ghost" onClick={handleClose} className="w-full">
-            Maybe Later
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col safe-area-top safe-area-bottom">
@@ -299,8 +249,11 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
-            {formatTime(remainingSeconds)} left
+          <span className={cn(
+            "text-xs",
+            isOverLimit ? "text-amber-500" : "text-muted-foreground"
+          )}>
+            {isOverLimit ? "Over limit" : `${formatTime(remainingSeconds)} left`}
           </span>
           <Button variant="ghost" size="icon" className="w-8 h-8" onClick={handleClose}>
             <X className="w-4 h-4" />
@@ -308,15 +261,39 @@ const VoiceChatModal = ({ isOpen, onClose, onTranscriptAdd }: VoiceChatModalProp
         </div>
       </div>
 
+      {/* Over limit banner */}
+      {isOverLimit && isConnected && (
+        <div className="mx-4 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          <span className="text-xs text-amber-600 dark:text-amber-400">
+            Free limit reached! Pay for 30 min extra
+          </span>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="ml-auto h-6 text-xs"
+            onClick={() => {
+              window.open("https://esewa.com.np", "_blank");
+              toast({
+                title: "eSewa Payment",
+                description: "Pay Rs. 50 for 30 min. Send screenshot to activate.",
+              });
+            }}
+          >
+            Pay ₹50
+          </Button>
+        </div>
+      )}
+
       {/* Main Content - Clean & Focused */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8">
         {/* Avatar */}
         <div className="relative">
           <div className={cn(
-            "w-24 h-24 rounded-full bg-card flex items-center justify-center transition-all duration-500",
+            "w-24 h-24 rounded-full bg-card flex items-center justify-center transition-all duration-500 border",
             isAISpeaking && "scale-110 ring-4 ring-accent/20"
           )}>
-            <img src={discoverseLogoNew} alt="Discoverse" className="w-14 h-14 object-contain" />
+            <DiscoverseText size="sm" />
           </div>
           {isAISpeaking && (
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">

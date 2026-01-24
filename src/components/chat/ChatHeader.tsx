@@ -1,7 +1,7 @@
 import { ArrowLeft, Trash2, History, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
+import DiscoverseText from "@/components/DiscoverseText";
 import { useState } from "react";
 import VoiceChatModal from "./VoiceChatModal";
 
@@ -27,12 +27,7 @@ const ChatHeader = ({ onBack, onClear, onShowHistory }: ChatHeaderProps) => {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center">
-              <img src={discoverseLogoNew} alt="" className="w-5 h-5 object-contain" />
-            </div>
-            <span className="font-medium text-sm">Discoverse</span>
-          </div>
+          <DiscoverseText size="sm" showVersion />
         </div>
 
         <div className="flex items-center gap-1">

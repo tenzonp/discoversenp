@@ -3,13 +3,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Onboarding, useOnboarding } from "@/components/Onboarding";
 import { Moon, Sun, User } from "lucide-react";
-import discoverseLogoNew from "@/assets/discoverse-logo-new.png";
+import DiscoverseText from "@/components/DiscoverseText";
+import { useState, useEffect } from "react";
+import { ChatMode } from "@/components/chat/ModeSelector";
+import { cn } from "@/lib/utils";
 
-// Mood-based prompts - minimal
-const vibes = [
-  { id: "chat", text: "Kura gara", subtle: "General chat" },
-  { id: "study", text: "Padhai", subtle: "Focus mode" },
-  { id: "help", text: "Help chaiyo", subtle: "Ask anything" },
+const modes: { id: ChatMode; label: string; sub: string; emoji: string }[] = [
+  { id: "friend", emoji: "😎", label: "Sathi", sub: "Chill & casual" },
+  { id: "professional", emoji: "💼", label: "Pro", sub: "Formal mode" },
+  { id: "exam", emoji: "📚", label: "Exam", sub: "Focus study" },
+  { id: "cultural", emoji: "🇳🇵", label: "Nepali", sub: "Local vibes" },
 ];
 
 const Index = () => {
@@ -17,17 +20,18 @@ const Index = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const [selectedMode, setSelectedMode] = useState<ChatMode | null>(null);
 
   if (showOnboarding) {
     return <Onboarding onComplete={completeOnboarding} />;
   }
 
-  const handleVibeClick = (vibe: typeof vibes[0]) => {
-    if (vibe.id === "study") {
-      navigate("/chat", { state: { mode: "exam", focusInput: true } });
-    } else {
-      navigate("/chat");
-    }
+  const handleModeSelect = (mode: ChatMode) => {
+    setSelectedMode(mode);
+    // Navigate after brief animation
+    setTimeout(() => {
+      navigate("/chat", { state: { mode } });
+    }, 200);
   };
 
   return (
@@ -59,40 +63,38 @@ const Index = () => {
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-xs text-center space-y-8 animate-appear">
-          {/* Logo */}
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-card flex items-center justify-center">
-              <img src={discoverseLogoNew} alt="Discoverse" className="w-10 h-10 object-contain" />
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="space-y-1">
-            <h1 className="text-xl font-medium">Discoverse</h1>
+          {/* Text Logo */}
+          <div className="flex flex-col items-center gap-2">
+            <DiscoverseText size="xl" showVersion />
             <p className="text-sm text-muted-foreground">K cha?</p>
           </div>
 
-          {/* Vibes */}
-          <div className="space-y-2 pt-4">
-            {vibes.map((vibe) => (
-              <button
-                key={vibe.id}
-                onClick={() => handleVibeClick(vibe)}
-                className="w-full py-3 px-4 rounded-xl bg-card hover:bg-accent/10 transition-colors text-left flex items-center justify-between group"
-              >
-                <span className="text-sm font-medium">{vibe.text}</span>
-                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                  {vibe.subtle}
-                </span>
-              </button>
-            ))}
+          {/* Mode Selection */}
+          <div className="space-y-3 pt-4">
+            <p className="text-xs text-muted-foreground/70">Choose your vibe</p>
+            <div className="grid grid-cols-2 gap-2">
+              {modes.map((mode) => (
+                <button
+                  key={mode.id}
+                  onClick={() => handleModeSelect(mode.id)}
+                  className={cn(
+                    "py-4 px-3 rounded-xl bg-card hover:bg-accent/10 transition-all text-center group border border-transparent",
+                    selectedMode === mode.id && "border-accent bg-accent/10 scale-95"
+                  )}
+                >
+                  <span className="text-xl mb-1 block">{mode.emoji}</span>
+                  <span className="text-sm font-medium block">{mode.label}</span>
+                  <span className="text-xs text-muted-foreground/70">{mode.sub}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="py-6 text-center">
-        <p className="text-xs text-muted-foreground/40">Nepal's AI</p>
+        <p className="text-xs text-muted-foreground/40">Discoverse 0.1 Model • Nepal's AI</p>
       </footer>
     </main>
   );
