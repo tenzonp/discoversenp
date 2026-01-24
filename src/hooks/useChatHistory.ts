@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,12 +20,36 @@ export interface Conversation {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discoverse-chat`;
 
+// Image generation detection patterns
+const IMAGE_GENERATE_PATTERNS = [
+  /(?:generate|create|make|draw|design|produce|craft|build)\s+(?:a|an|the|some|me)?\s*(?:image|picture|photo|graphic|art|illustration|poster|banner|logo|icon|avatar|thumbnail)/i,
+  /(?:image|picture|photo|graphic|art|illustration|poster|banner|logo|icon)\s+(?:generate|create|make|draw|design|banau|bana)/i,
+  /(?:banau|bana|banaideu|banaidinus)\s+(?:euta|ek|)?\s*(?:image|picture|photo|graphic|tasvir|chitra)/i,
+  /(?:tasvir|chitra|photo)\s+(?:banau|bana|banaideu)/i,
+  /(?:can you|please|pls)\s+(?:generate|create|make|draw)\s+(?:a|an)?\s*(?:image|picture|graphic)/i,
+];
+
+// Image edit/modify patterns
+const IMAGE_EDIT_PATTERNS = [
+  /(?:edit|modify|change|update|fix|improve|enhance|adjust|tweak|redo|remake)\s+(?:the|this|that|my|last|previous)?\s*(?:image|picture|photo|graphic)/i,
+  /(?:make|turn)\s+(?:it|the image|this)\s+(?:more|less|bigger|smaller|brighter|darker|colorful)/i,
+  /(?:add|remove|put|delete)\s+(?:something|text|color|filter|effect|background)\s+(?:to|from|on|in)\s+(?:the|this|that)?\s*(?:image|picture)/i,
+  /(?:image|picture)\s+(?:lai|ma)\s+(?:edit|change|modify|update)/i,
+  /(?:yo|tyo|last|aghi ko)\s+(?:image|picture)\s+(?:lai)?\s*(?:change|edit|modify|update)/i,
+  /(?:regenerate|re-generate|redo|remake)\s+(?:the|this|that)?\s*(?:image|picture)/i,
+  /(?:different|another|new)\s+(?:version|style|look)\s+(?:of)?\s*(?:the|this)?\s*(?:image|picture)/i,
+];
+
 export const useChatHistory = (userId: string | undefined, mode: string = "friend") => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageRemaining, setImageRemaining] = useState<number | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const lastGeneratedImageRef = useRef<string | null>(null);
+  const lastImagePromptRef = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Load user's conversations
@@ -117,9 +141,37 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     await loadConversations();
   }, [loadConversations]);
 
+  // Check if message is asking for image generation
+  const detectImageGeneration = useCallback((content: string): string | null => {
+    const lowerContent = content.toLowerCase();
+    
+    // Check for direct generation patterns
+    for (const pattern of IMAGE_GENERATE_PATTERNS) {
+      if (pattern.test(content)) {
+        // Extract the image description from the message
+        return content;
+      }
+    }
+    
+    return null;
+  }, []);
+
+  // Check if message is asking for image editing
+  const detectImageEdit = useCallback((content: string): { isEdit: boolean; basePrompt: string | null } => {
+    for (const pattern of IMAGE_EDIT_PATTERNS) {
+      if (pattern.test(content)) {
+        return { 
+          isEdit: true, 
+          basePrompt: lastImagePromptRef.current 
+        };
+      }
+    }
+    return { isEdit: false, basePrompt: null };
+  }, []);
+
   // Send message with streaming
   const sendMessage = useCallback(async (content: string, imageUrl?: string, generateImagePrompt?: string, userContext?: string) => {
-    if ((!content.trim() && !imageUrl) || isLoading || !userId) return;
+    if ((!content.trim() && !imageUrl) || isLoading || isGeneratingImage || !userId) return;
 
     let convId = currentConversationId;
     
@@ -146,8 +198,26 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     setMessages((prev) => [...prev, userMessage]);
     await saveMessage(convId, "user", messageContent);
 
+    // Auto-detect image generation or use provided prompt
+    let finalImagePrompt = generateImagePrompt;
+    
+    // Check for image edit request first
+    const editCheck = detectImageEdit(content);
+    if (editCheck.isEdit && lastGeneratedImageRef.current) {
+      finalImagePrompt = `${content}. Based on previous: ${editCheck.basePrompt || 'previous image'}`;
+    }
+    
+    // Then check for new image generation
+    if (!finalImagePrompt) {
+      const detectedPrompt = detectImageGeneration(content);
+      if (detectedPrompt) {
+        finalImagePrompt = detectedPrompt;
+      }
+    }
+
     // If there's an image generation prompt, generate image and add as assistant message
-    if (generateImagePrompt) {
+    if (finalImagePrompt) {
+      setIsGeneratingImage(true);
       try {
         // Get the user's actual session token
         const { data: { session } } = await supabase.auth.getSession();
@@ -157,7 +227,17 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
             title: "Login Required",
             description: "Image generate garna login gara 🙏",
           });
+          setIsGeneratingImage(false);
           return;
+        }
+
+        const requestBody: { prompt: string; editImageUrl?: string } = { 
+          prompt: finalImagePrompt 
+        };
+        
+        // If editing, include the last generated image
+        if (editCheck.isEdit && lastGeneratedImageRef.current) {
+          requestBody.editImageUrl = lastGeneratedImageRef.current;
         }
 
         const response = await fetch(
@@ -168,21 +248,43 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
               "Content-Type": "application/json",
               Authorization: `Bearer ${session.access_token}`,
             },
-            body: JSON.stringify({ prompt: generateImagePrompt }),
+            body: JSON.stringify(requestBody),
           }
         );
         
         const data = await response.json();
+        
+        if (!response.ok) {
+          if (response.status === 429) {
+            toast({
+              variant: "destructive",
+              title: "Daily Limit Reached",
+              description: data.message || "5 images per day limit reached. Try again tomorrow! 🌙",
+            });
+            setImageRemaining(0);
+          } else {
+            throw new Error(data.error || "Image generation failed");
+          }
+          setIsGeneratingImage(false);
+          return;
+        }
+        
         if (data.imageUrl) {
+          // Store for potential editing
+          lastGeneratedImageRef.current = data.imageUrl;
+          lastImagePromptRef.current = finalImagePrompt;
+          setImageRemaining(data.remaining ?? null);
+          
           const assistantImageMessage: Message = {
             id: crypto.randomUUID(),
             role: "assistant",
-            content: `Here's your image! 🎨`,
+            content: `Here's your image! 🎨 ${data.remaining !== undefined ? `(${data.remaining} left today)` : ''}`,
             imageUrl: data.imageUrl,
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, assistantImageMessage]);
           await saveMessage(convId, "assistant", `[Generated Image: ${data.imageUrl}]\n\nHere's your image! 🎨`);
+          setIsGeneratingImage(false);
           return; // Don't continue with normal chat flow
         }
       } catch (error) {
@@ -190,9 +292,10 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
         toast({
           variant: "destructive",
           title: "Image Error",
-          description: "Image generate garna sakiena 😔",
+          description: error instanceof Error ? error.message : "Image generate garna sakiena 😔",
         });
       }
+      setIsGeneratingImage(false);
       return;
     }
 
@@ -326,6 +429,8 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     conversations,
     currentConversationId,
     isLoading,
+    isGeneratingImage,
+    imageRemaining,
     loadingHistory,
     sendMessage,
     loadMessages,

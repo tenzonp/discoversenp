@@ -9,6 +9,7 @@ import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
+import ImageGeneratingIndicator from "@/components/chat/ImageGeneratingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatMode } from "@/components/chat/ModeSelector";
@@ -43,6 +44,8 @@ const Chat = () => {
     conversations,
     currentConversationId,
     isLoading,
+    isGeneratingImage,
+    imageRemaining,
     sendMessage,
     loadMessages,
     deleteConversation,
@@ -197,6 +200,9 @@ const Chat = () => {
                 isLatest={index === messages.length - 1}
               />
             ))}
+            {isGeneratingImage && (
+              <ImageGeneratingIndicator remaining={imageRemaining} />
+            )}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <TypingIndicator />
             )}
@@ -212,7 +218,7 @@ const Chat = () => {
           </p>
         </div>
       ) : (
-        <ChatInput onSend={handleSend} isLoading={isLoading} currentMode={mode} onModeChange={setMode} />
+        <ChatInput onSend={handleSend} isLoading={isLoading || isGeneratingImage} currentMode={mode} onModeChange={setMode} />
       )}
 
       {showHistory && (
