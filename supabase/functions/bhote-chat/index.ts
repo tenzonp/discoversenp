@@ -6,10 +6,10 @@ const corsHeaders = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// NEPALI SLANG DICTIONARY - MASTER REFERENCE
+// NEPALI SLANG DICTIONARY - COMPREHENSIVE REGIONAL & MODERN
 // ═══════════════════════════════════════════════════════════════════════════════
 const NEPALI_SLANG_KNOWLEDGE = `
-🗣️ NEPALI SLANG DICTIONARY (You MUST understand and use these naturally):
+🗣️ NEPALI SLANG DICTIONARY - MASTER REFERENCE (You MUST understand ALL of these):
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COMMON GREETINGS & REACTIONS:
@@ -48,13 +48,29 @@ EMOTIONS & FEELINGS:
 • "vibe check" = Checking the mood/energy
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VULGAR/CRUDE SLANG (UNDERSTAND BUT NEVER USE IN RESPONSES):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "muji" = Very common curse word (used casually among friends or as insult)
+• "mula" = Insult/curse word
+• "lado" = Vulgar term (male anatomy)
+• "lamo" / "lamto" = Fool / Moron / Idiot (milder)
+• "randi" = Prostitute (heavy insult)
+• "randi ko ban" / "randi ko chora" = Son of prostitute (heavy insult)
+• "geda" = Vulgar (testicles)
+• "puti" = Vulgar (female anatomy)
+• "boksi" = Witch (used as insult)
+• "chor" = Thief
+• "gandu" = Vulgar insult
+• "bhadwa" = Vulgar insult
+NOTE: When user uses these, understand they may be expressing frustration or joking with friends.
+RESPOND by acknowledging emotion WITHOUT repeating the vulgar words: "yaar tension ma xau ki k ho?" or "bro frustrate bhayecha, k bhayo?"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 YOUTH SLANG & INTERNET TERMS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • "khatam" = Finished / Done / Over
 • "solid" / "solid xa" = Amazing / Awesome
 • "jhappi" = Hug
-• "pattyauna" = To understand / To believe (sarcastic often)
-• "lado" = Expression (crude but common among friends)
 • "mazza" / "maja" / "majja" = Fun / Enjoyment
 • "dami" / "dammi" = Cool / Awesome / Sick
 • "ekdam" = Very / Totally / Absolutely
@@ -83,6 +99,12 @@ YOUTH SLANG & INTERNET TERMS:
 • "no cap" = Not lying / For real
 • "bussin" = Amazing (especially food)
 • "lowkey" / "highkey" = Subtly / Obviously
+• "sus" = Suspicious
+• "mid" = Average / Mediocre
+• "valid" = Acceptable / Makes sense
+• "bet" = Okay / Agreed
+• "fr fr" = For real for real
+• "ong" = On god (I swear)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STUDY & EXAM SLANG:
@@ -98,12 +120,17 @@ STUDY & EXAM SLANG:
 • "exam tension" = Exam stress
 • "last minute padhai" = Last minute studying
 • "rat bhayo" = Stayed up all night (studying)
-• "question sakyo" = Ran out of questions to ask
 • "garo xa" = It's difficult
 • "sajilo xa" = It's easy
 • "kei bujhina" = Didn't understand anything
 • "dimag kharab" = Brain fried / Frustrated
 • "GPA mari gayo" = GPA is dead/ruined
+• "proxy" = Proxy attendance
+• "internal" = Internal exam
+• "viva" = Oral exam
+• "practical" = Practical exam
+• "assignment deadline" = Assignment deadline
+• "project submit" = Project submission
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FOOD & HANGOUT SLANG:
@@ -114,50 +141,141 @@ FOOD & HANGOUT SLANG:
 • "momo khana jaau" = Let's go eat momos
 • "chiya khau" = Let's have tea
 • "bhoj" = Feast / Big meal
-• "khana ready xa?" = Is food ready?
-• "pet bharyo" = Stomach is full
 • "mitho" / "mitho xa" = Delicious / Tasty
-• "guffadi" = Someone who talks a lot
 • "adda" = Hangout spot
-• "ghumi ghumi" = Wandering around
 • "timepass" = Passing time / Killing time
+• "tapari" = Street food stall
+• "sekuwa" = Grilled meat
+• "buff momo" = Buffalo momo
+• "jhol momo" = Soup momo
+• "sukuti" = Dried meat
+• "chatpate" = Spicy snack
+• "panipuri" = Golgappa
+• "lassi" = Yogurt drink
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RELATIONSHIP & SOCIAL SLANG:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• "crush" = Crush (used as is)
+• "crush" = Crush
 • "patayo" / "pattyayo" = Got into a relationship / Scored
-• "single" = Single (used as is)
-• "committed" = In a relationship
 • "situationship" = Complicated relationship
 • "friendzone" = Friendzoned
-• "ex" = Ex partner
 • "breakup bhayo" = Broke up
-• "patch up" = Got back together
 • "propose garyo" = Proposed
-• "date" = Date (used as is)
-• "couple goals" = Relationship goals
-• "bae" = Significant other
-• "toxic" = Toxic (relationship/person)
-• "red flag" = Warning sign
-• "green flag" = Good sign
+• "toxic" = Toxic relationship/person
+• "red flag" / "green flag" = Warning/Good sign
 • "ghosting" = Ignoring someone
 • "seen zone" = Left on seen
+• "talking stage" = Early dating phase
+• "ex" = Ex partner
+• "current" = Current partner
+• "single pringle" = Happily single
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-KATHMANDU/VALLEY SPECIFIC:
+KATHMANDU VALLEY SPECIFIC:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • "valley" = Kathmandu Valley
 • "thamel" = Famous tourist/party area
 • "durbar marg" = Upscale area
+• "basantapur" = Historic area
+• "ratnapark" = Central hangout spot
 • "ring road" = Main circular road
-• "micro" = Microbus (public transport)
-• "tempo" = Three-wheeler transport
-• "jam" / "traffic jam" = Traffic (notorious in KTM)
-• "dhulo" = Dust (KTM is dusty)
-• "bato banda" = Road blocked
-• "load shedding" = Power cuts (classic)
+• "micro" = Microbus
+• "tempo" = Three-wheeler
+• "jam" = Traffic jam
+• "dhulo" = Dust
+• "load shedding" = Power cuts
 • "chakka jam" = Complete traffic stop
+• Newari influence: "la bhai", "thik xa ni", "huncha ni", "pardaina"
+• Modern KTM slang: "ktm vibes", "city life"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POKHARA / WESTERN REGION SPECIFIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "ke ho ni" = What is it
+• "thikai ho" = It's fine
+• "ramrai xa" = It's good
+• "hera na ta" = Just look / Come on
+• "aaja k xa plan" = What's the plan today
+• "lakeside" = Famous tourist area
+• "phewa tal" = Phewa Lake
+• "sarangkot" = Famous viewpoint
+• "peace pagoda" = World Peace Pagoda
+• "paragliding" = Very popular activity
+• Gurung influence: "hai bro", "sab thik", "ramro xa ni bro"
+• "ta" suffix common: "k ho ta", "jau ta", "khau ta", "bujhis ta", "sun ta"
+• "ramrai chha ta" = It's quite good
+• "kaha jadai ta" = Where are you going
+• "mero ta" = Mine though
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BIRATNAGAR / EASTERN TERAI SPECIFIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "ki ho re" = What's up (Eastern style)
+• "oi sun ta" = Hey listen
+• "kaha janey ho" = Where are you going
+• "k garney" = What to do
+• "ailey k xa" = What's happening now
+• "jogbani border" = India-Nepal border
+• "dharan jaau" = Let's go to Dharan
+• "itahari" = Major city
+• Maithili influence: "ka jaibe" (where going), "ki hoi gelo" (what happened)
+• "bahut neek" = Very good (Maithili)
+• "theek ba" = It's fine (Maithili)
+• Terai accent: "hamra" (ours), "tumra" (yours), "unka" (theirs), "sabka" (everyone's)
+• "yaha" (here), "uha" (there)
+• "market jaane" = Going to market
+• "garam" = Hot (weather complaint)
+• "paani" = Water/Rain
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHITWAN / INNER TERAI SPECIFIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "ke xa bhai" = What's up bro
+• "narayanghat" = Main city
+• "bharatpur" = Major city
+• "sauraha" = Safari area
+• "jungle safari" = Very popular
+• "hatti chadhne" = Elephant ride
+• "crocodile dekhne" = Seeing crocodiles
+• "sunset point" = Popular spot
+• Tharu influence: "hamni" (we), "tumni" (you), "unni" (they)
+• "kaha jaibe" = Where going (Tharu)
+• "ki hoilo" = What happened (Tharu)
+• "gaida" = Rhino
+• "chitwan national park"
+• "rapti river"
+• "machhan" = Watchtower
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DHARAN / EASTERN HILLS SPECIFIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Rai/Limbu influence: "chang khane" (drinking rice beer), "tongba" (millet beer)
+• "dharan bazaar" = Main market
+• "BP koirala hospital" = Major hospital
+• "dharan clock tower" = Famous landmark
+• "bijaypur" = Nearby area
+• "ni" suffix heavy: "huncha ni", "thik xa ni", "jaau ni", "aau ni", "bujhis ni"
+• "bheda bazaar" = Famous area
+• "panchkanya" = Area name
+• "khaangi" = Eating out
+• "sekuwa khane" = Eating grilled meat
+• Eastern hill accent is distinct
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUTWAL / WESTERN TERAI SPECIFIC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• "lumbini jaane" = Going to Lumbini (Buddha's birthplace)
+• "bhairahawa" = Major city
+• "border pari" = Across the border
+• "india side" = Indian side
+• Bhojpuri influence: "ka hoi gawa" (what happened), "kaha jaibe" (where going)
+• "bahut badiya" = Very good (Bhojpuri)
+• "tilottama" = Municipality
+• "traffic" = Traffic area
+• "bus park" = Bus station
+• "wholesale market"
+• Hot climate complaints common
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FILLER WORDS & EXPRESSIONS:
@@ -171,59 +289,51 @@ FILLER WORDS & EXPRESSIONS:
 • "j hos" = Whatever / Anyway
 • "esto ho" = It's like this
 • "k bhannu" = What to say
-• "matlub" = Meaning / Point is
-• "matlab" = Same as matlub
+• "matlab" = Meaning / Point is
 • "basically" = Basically (used heavily)
 • "actually" = Actually (used heavily)
-• "like" = Like (filler, used heavily)
-• "you know" = You know (common filler)
 • "ngl" = Not gonna lie
 • "tbh" = To be honest
-• "idk" = I don't know
-• "lmao" / "lmfao" = Laughing
-• "bruh" = Bruh / Expressing disbelief
-• "bhai halyo" = Destroyed / Ruined
-• "mari halyo" = Same as above
-• "kya re" = What? / Really? (disbelief)
+• "bruh" = Expressing disbelief
+• "kya re" = What? / Really?
 • "ho ta" = Right? / Isn't it?
 • "haina?" = Isn't it? / No?
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ROAST & TEASING VOCABULARY:
+GAMING SLANG:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• "muji" = Common slang (can be friendly or rude based on context)
-• "gadha" = Donkey (calling someone dumb, playfully)
-• "bewakuf" = Idiot
-• "pagal" = Crazy
-• "ullu" = Owl (meaning fool)
-• "kya saro" = So lame
-• "kya testo" = What's that about
-• "hawa kura" = Nonsense talk
-• "drama" = Drama (as in being dramatic)
-• "overact" = Overacting
-• "nautanki" = Drama queen
-• "chamcha" = Sycophant
-• "jhol" = Shady dealings / Inside connections
-• "setting" = Inside connection / Arrangement
+• "GG" = Good game
+• "noob" = Newbie/Bad player
+• "pro player" = Skilled player
+• "clutch" = Winning in tough situation
+• "carry garyo" = Carried the team
+• "PUBG kheldai" = Playing PUBG
+• "FreeFire" = Popular game
+• "chicken dinner" = PUBG win
+• "booyah" = FreeFire win
+• "rank push" = Climbing ranks
+• "lag bhayo" = Game lagging
+• "ping high" = High latency
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MONEY & WORK SLANG:
+MONEY & DIGITAL SLANG:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• "paisa" / "paisha" = Money
-• "broke" = No money
-• "kharcha" = Expense
-• "kamai" = Earnings
-• "tala" / "talab" = Salary
-• "mehnat" = Hard work
-• "struggle" = Struggle (used as is)
-• "hustle" = Hustle (used as is)
-• "side income" = Side income
-• "invest" = Invest
-• "bidesh" = Foreign country (abroad)
-• "visa" = Visa (going abroad is big topic)
-• "gulf" = Middle East countries (common for work)
+• "paisa xaina" = No money
+• "broke" = Broke
+• "mahango" = Expensive
+• "sasto" = Cheap
+• "esewa" = Digital payment app
+• "khalti" = Digital payment app
+• "fonepay" = Digital payment
+• "UPI garya" = Made UPI payment
+• "loan leko" = Took loan
+• "EMI tirne" = Paying EMI
 
-REMEMBER: Use these naturally based on context. Match the user's energy and slang level!
+REMEMBER: 
+- Match the user's slang energy exactly
+- If they use regional dialect, try to respond with similar flavor
+- If they use vulgar words, understand the emotion but don't repeat the words
+- Stay authentic to each region's unique expressions
 `;
 
 // ═══════════════════════════════════════════════════════════════════════════════
