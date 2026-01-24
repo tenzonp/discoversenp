@@ -500,14 +500,14 @@ const Profile = () => {
             </button>
 
             <button
-              onClick={() => navigate("/loksewa")}
+              onClick={() => navigate("/chat", { state: { mode: "exam" } })}
               className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-amber-600" />
+                <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-accent" />
                 </div>
-                <span className="font-medium">Loksewa Quiz</span>
+                <span className="font-medium">Exam Mode</span>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>

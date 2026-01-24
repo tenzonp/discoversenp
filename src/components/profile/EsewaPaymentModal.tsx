@@ -32,13 +32,18 @@ interface EsewaPaymentModalProps {
 }
 
 const PRO_PRICE = 299; // NPR
-const ESEWA_ID = "9800000000"; // Replace with actual eSewa merchant ID
+const ESEWA_ID = "9767656110";
 
 const PRO_FEATURES = [
-  { icon: MessageCircle, text: "150 messages per chat" },
-  { icon: Mic, text: "30 minutes voice chat daily" },
-  { icon: Brain, text: "Current focus & behavior tracking" },
-  { icon: Sparkles, text: "Priority AI responses" },
+  { icon: Sparkles, text: "🆕 Beta Access - नयाँ features पहिला पाउने" },
+  { icon: MessageCircle, text: "150 messages per chat (3x more)" },
+  { icon: Mic, text: "30 minutes voice chat daily (10x more)" },
+  { icon: Brain, text: "AI Personality Adaptation - तपाईंको style बुझ्छ" },
+  { icon: Crown, text: "Professional Mode - Expert consultation" },
+  { icon: Sparkles, text: "Current Focus Tracking - What you're working on" },
+  { icon: Brain, text: "Deep Behavior Analytics & Insights" },
+  { icon: Sparkles, text: "Priority Support & Faster Responses" },
+  { icon: Crown, text: "Early access to new AI models" },
 ];
 
 export function EsewaPaymentModal({
@@ -124,7 +129,7 @@ export function EsewaPaymentModal({
                 const Icon = feature.icon;
                 return (
                   <div key={i} className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-green-500" />
+                    <Check className="w-4 h-4 text-primary" />
                     <Icon className="w-4 h-4 text-primary" />
                     <span>{feature.text}</span>
                   </div>
@@ -134,7 +139,7 @@ export function EsewaPaymentModal({
 
             <Button 
               onClick={() => setStep("payment")} 
-              className="w-full bg-gradient-to-r from-green-600 to-green-500"
+              className="w-full bg-primary hover:bg-primary/90"
             >
               <Smartphone className="w-4 h-4 mr-2" />
               Pay with eSewa
@@ -144,7 +149,7 @@ export function EsewaPaymentModal({
 
         {step === "payment" && (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/30">
               <p className="text-sm font-medium mb-2">Send रू {PRO_PRICE} to:</p>
               <div className="flex items-center justify-between p-3 rounded-lg bg-background">
                 <div>

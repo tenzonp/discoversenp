@@ -643,7 +643,7 @@ export const useChatHistory = (
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, userId, currentConversationId, createConversation, saveMessage, updateConversationTitle, mode, toast]);
+  }, [messages, isLoading, isGeneratingImage, isExtractingText, userId, currentConversationId, createConversation, saveMessage, updateConversationTitle, mode, toast, messageLimit, userBehavior, detectImageGeneration, detectImageEdit, detectTextExtraction, detectUploadedImageEdit, handleTextExtraction]);
 
   // Delete conversation
   const deleteConversation = useCallback(async (conversationId: string) => {
