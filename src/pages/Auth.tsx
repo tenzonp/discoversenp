@@ -5,31 +5,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Mail, KeyRound, User, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, KeyRound, User, Sparkles, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import DiscoverseText from "@/components/DiscoverseText";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type AuthStep = "email" | "otp" | "signup-details";
+type AuthMode = "otp" | "password";
+type AuthStep = "email" | "otp" | "password-login" | "signup-details" | "forgot-password" | "reset-password";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
+  const [mode, setMode] = useState<AuthMode>("otp");
   const [step, setStep] = useState<AuthStep>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [isSignup, setIsSignup] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user) {
       navigate("/chat");
     }
   }, [user, authLoading, navigate]);
+
+  // Check for password reset token in URL
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    const type = hashParams.get("type");
+    
+    if (accessToken && type === "recovery") {
+      setStep("reset-password");
+    }
+  }, []);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -45,11 +61,10 @@ const Auth = () => {
     
     setLoading(true);
     try {
-      // Use signInWithOtp - works for both new and existing users
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          shouldCreateUser: true, // Create user if doesn't exist
+          shouldCreateUser: true,
         },
       });
 
@@ -87,11 +102,9 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Check if this is a new user (no display_name in metadata)
       const isNew = !data.user?.user_metadata?.display_name;
       
       if (isNew) {
-        setIsNewUser(true);
         setStep("signup-details");
       } else {
         toast({
@@ -107,6 +120,129 @@ const Auth = () => {
         description: error.message || "Please check your code and try again",
       });
       setOtp("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) return;
+
+    setLoading(true);
+    try {
+      if (isSignup) {
+        if (password !== confirmPassword) {
+          throw new Error("Passwords don't match");
+        }
+        if (password.length < 6) {
+          throw new Error("Password must be at least 6 characters");
+        }
+
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              display_name: displayName || email.split("@")[0],
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Account Created! 🎉",
+          description: "Swagat xa! Welcome to Discoverse",
+        });
+        navigate("/chat");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Welcome back! 🙏",
+          description: "Namaste, Discoverse ma swagat xa!",
+        });
+        navigate("/chat");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: isSignup ? "Signup Failed" : "Login Failed",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Reset Link Sent! 📧",
+        description: "Check your email for the password reset link from Discoverse",
+      });
+      setResendCooldown(60);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to send reset link",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Password Error",
+        description: "Passwords don't match",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password Updated! 🎉",
+        description: "You can now login with your new password",
+      });
+      
+      // Clear hash and redirect
+      window.location.hash = "";
+      setStep("email");
+      setMode("password");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Reset Failed",
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -174,12 +310,18 @@ const Auth = () => {
   };
 
   const handleBack = () => {
-    if (step === "otp") {
+    if (step === "otp" || step === "password-login" || step === "forgot-password") {
       setStep("email");
       setOtp("");
-    } else if (step === "signup-details") {
-      // Can't go back after OTP verification
+      setPassword("");
     }
+  };
+
+  const switchMode = () => {
+    setMode(mode === "otp" ? "password" : "otp");
+    setStep("email");
+    setPassword("");
+    setOtp("");
   };
 
   if (authLoading) {
@@ -199,7 +341,7 @@ const Auth = () => {
           size="icon" 
           onClick={step === "email" ? () => navigate("/") : handleBack} 
           className="w-8 h-8 rounded-full"
-          disabled={step === "signup-details"}
+          disabled={step === "signup-details" || step === "reset-password"}
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
@@ -207,38 +349,152 @@ const Auth = () => {
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
-        <div className="w-full max-w-sm space-y-8">
+        <div className="w-full max-w-sm space-y-6">
           {/* Logo */}
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             <div className="flex justify-center">
               <DiscoverseText size="lg" showVersion />
             </div>
             <p className="text-sm text-muted-foreground">
-              {step === "email" && "Sign in with your email"}
+              {step === "email" && (mode === "otp" ? "Sign in with email OTP" : (isSignup ? "Create your account" : "Sign in with password"))}
               {step === "otp" && "Enter the code sent to your email"}
+              {step === "password-login" && "Enter your password"}
               {step === "signup-details" && "Complete your profile"}
+              {step === "forgot-password" && "Reset your password"}
+              {step === "reset-password" && "Set your new password"}
             </p>
           </div>
 
-          {/* Step Indicator */}
-          <div className="flex justify-center gap-2">
-            {["email", "otp", "signup-details"].map((s, i) => (
-              <div
-                key={s}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  step === s 
-                    ? "bg-primary w-6" 
-                    : i < ["email", "otp", "signup-details"].indexOf(step)
-                    ? "bg-primary/50"
-                    : "bg-muted"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Reset Password Step */}
+          {step === "reset-password" && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-medium text-lg">Set New Password</h3>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" className="text-sm">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="h-12 rounded-xl pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmNewPassword" className="text-sm">Confirm Password</Label>
+                <Input
+                  id="confirmNewPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="h-12 rounded-xl"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading || !password || password !== confirmPassword}
+                className="w-full h-12 rounded-xl"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Update Password"}
+              </Button>
+            </form>
+          )}
+
+          {/* Forgot Password Step */}
+          {step === "forgot-password" && (
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Mail className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-medium text-lg">Forgot Password?</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Enter your email and we'll send you a reset link
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail" className="text-sm">Email Address</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-xl"
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading || !email.trim() || resendCooldown > 0}
+                className="w-full h-12 rounded-xl"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : resendCooldown > 0 ? (
+                  `Resend in ${resendCooldown}s`
+                ) : (
+                  "Send Reset Link"
+                )}
+              </Button>
+
+              <p className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setStep("email")}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Back to login
+                </button>
+              </p>
+            </form>
+          )}
 
           {/* Email Step */}
           {step === "email" && (
-            <form onSubmit={handleSendOTP} className="space-y-6">
+            <form onSubmit={mode === "otp" ? handleSendOTP : handlePasswordAuth} className="space-y-5">
+              {mode === "password" && isSignup && (
+                <div className="space-y-2">
+                  <Label htmlFor="displayName" className="text-sm flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Your Name
+                  </Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="What should we call you?"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm flex items-center gap-2">
                   <Mail className="w-4 h-4" />
@@ -257,24 +513,126 @@ const Auth = () => {
                 />
               </div>
 
+              {mode === "password" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="h-12 rounded-xl pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isSignup && (
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                  )}
+
+                  {!isSignup && (
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => setStep("forgot-password")}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
               <Button
                 type="submit"
-                disabled={loading || !email.trim()}
+                disabled={loading || !email.trim() || (mode === "password" && !password)}
                 className="w-full h-12 rounded-xl text-base font-medium"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
+                ) : mode === "otp" ? (
                   <>
                     <Mail className="w-4 h-4 mr-2" />
                     Send OTP Code
                   </>
+                ) : isSignup ? (
+                  "Create Account"
+                ) : (
+                  "Sign In"
                 )}
               </Button>
 
-              <p className="text-xs text-center text-muted-foreground">
-                We'll send a 6-digit code to your email. No password needed!
-              </p>
+              {mode === "otp" && (
+                <p className="text-xs text-center text-muted-foreground">
+                  We'll send a 6-digit code to your email. No password needed!
+                </p>
+              )}
+
+              {mode === "password" && (
+                <p className="text-center text-sm text-muted-foreground">
+                  {isSignup ? "Already have an account? " : "Don't have an account? "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignup(!isSignup);
+                      setPassword("");
+                      setConfirmPassword("");
+                    }}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {isSignup ? "Sign In" : "Sign Up"}
+                  </button>
+                </p>
+              )}
+
+              {/* Mode Switcher */}
+              <div className="pt-4 border-t border-border">
+                <button
+                  type="button"
+                  onClick={switchMode}
+                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {mode === "otp" ? (
+                    <>
+                      <Lock className="w-4 h-4 inline mr-1" />
+                      Use password instead
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-4 h-4 inline mr-1" />
+                      Use OTP instead (no password)
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           )}
 
