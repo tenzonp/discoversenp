@@ -23,8 +23,10 @@ import RecentImagesBar from "@/components/chat/RecentImagesBar";
 import ExamClassSelector, { ExamClass, ExamStream, ExamGroup, ExamSubject } from "@/components/chat/ExamClassSelector";
 import { FormulaSheet } from "@/components/chat/FormulaSheet";
 import { StudyNotesPanel } from "@/components/chat/StudyNotesPanel";
+import { FlashcardPanel } from "@/components/chat/FlashcardPanel";
+import { DailyQuestionsPanel } from "@/components/chat/DailyQuestionsPanel";
 import { cn } from "@/lib/utils";
-import { GraduationCap, Calculator, BookOpen } from "lucide-react";
+import { GraduationCap, Calculator, BookOpen, Layers, Lightbulb } from "lucide-react";
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
@@ -291,13 +293,35 @@ INSTRUCTIONS FOR EXAM MODE:
               </span>
             </button>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <DailyQuestionsPanel
+                classLevel={`Class ${examClass}`}
+                stream={examStream || undefined}
+                subject={examSubject}
+                trigger={
+                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-primary/20 hover:bg-primary/30 transition-colors text-xs font-medium text-primary">
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    Daily Q
+                  </button>
+                }
+                onAskQuestion={(q) => handleSend(q)}
+              />
               <FormulaSheet 
                 classLevel={`Class ${examClass}`}
                 trigger={
                   <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
                     <Calculator className="w-3.5 h-3.5" />
                     Formulas
+                  </button>
+                }
+              />
+              <FlashcardPanel
+                userId={user?.id}
+                category={examSubject !== 'all' ? examSubject : undefined}
+                trigger={
+                  <button className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium">
+                    <Layers className="w-3.5 h-3.5" />
+                    Cards
                   </button>
                 }
               />
