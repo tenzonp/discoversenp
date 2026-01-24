@@ -9,7 +9,7 @@ interface ModeSelectorProps {
 
 const modes: { id: ChatMode; label: string; sub: string }[] = [
   { id: "friend", label: "Sathi", sub: "Chill" },
-  { id: "professional", label: "Pro", sub: "Formal" },
+  { id: "professional", label: "Pro", sub: "Expert" },
   { id: "exam", label: "Exam", sub: "Focus" },
   { id: "cultural", label: "Nepali", sub: "Local" },
 ];

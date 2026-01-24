@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useCelebration } from "./useCelebration";
 
 export interface Achievement {
   id: string;
@@ -147,6 +148,8 @@ const ACHIEVEMENT_DEFINITIONS: Omit<Achievement, "currentValue" | "unlocked" | "
 
 export function useAchievements(stats: UserBehaviorStats | null) {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const previousUnlockedRef = useRef<Set<string>>(new Set());
+  const { celebrateAchievement } = useCelebration();
 
   const calculateAchievements = useCallback(() => {
     if (!stats) return;
@@ -216,8 +219,20 @@ export function useAchievements(stats: UserBehaviorStats | null) {
       };
     });
 
+    // Check for newly unlocked achievements
+    calculated.forEach((achievement) => {
+      if (achievement.unlocked && !previousUnlockedRef.current.has(achievement.id)) {
+        // New achievement unlocked! Celebrate!
+        if (previousUnlockedRef.current.size > 0) {
+          // Only celebrate if not the initial load
+          celebrateAchievement(achievement.name);
+        }
+        previousUnlockedRef.current.add(achievement.id);
+      }
+    });
+
     setAchievements(calculated);
-  }, [stats]);
+  }, [stats, celebrateAchievement]);
 
   useEffect(() => {
     calculateAchievements();
