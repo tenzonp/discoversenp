@@ -149,13 +149,24 @@ export const useChatHistory = (userId: string | undefined, mode: string = "frien
     // If there's an image generation prompt, generate image and add as assistant message
     if (generateImagePrompt) {
       try {
+        // Get the user's actual session token
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast({
+            variant: "destructive",
+            title: "Login Required",
+            description: "Image generate garna login gara 🙏",
+          });
+          return;
+        }
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              Authorization: `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({ prompt: generateImagePrompt }),
           }
