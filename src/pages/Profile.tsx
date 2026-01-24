@@ -14,15 +14,16 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Leaderboard } from "@/components/Leaderboard";
 import { SubscriptionCard } from "@/components/profile/SubscriptionCard";
 import { UserBehaviorCard } from "@/components/profile/UserBehaviorCard";
+import { AchievementsCard } from "@/components/profile/AchievementsCard";
 import { EsewaPaymentModal } from "@/components/profile/EsewaPaymentModal";
+import { useUserBehavior } from "@/hooks/useUserBehavior";
+import { useAchievements } from "@/hooks/useAchievements";
 import { 
   ArrowLeft, 
   User,
   Trophy,
   MessageCircle,
   BookOpen,
-  Languages,
-  GraduationCap,
   LogOut,
   ChevronRight,
   TrendingUp,
@@ -72,6 +73,24 @@ const Profile = () => {
   const [profile, setProfile] = useState<{ display_name: string | null }>({ display_name: null });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [voiceUsage, setVoiceUsage] = useState(0);
+  
+  // User behavior and achievements
+  const { behavior } = useUserBehavior(user?.id);
+  const { achievements, unlockedCount, totalCount, progress: achievementProgress } = useAchievements(
+    user ? {
+      flirtLevel: behavior.flirtLevel,
+      energyLevel: behavior.energyLevel,
+      expertiseLevel: behavior.expertiseLevel,
+      conversationDepth: behavior.conversationDepth,
+      humorAppreciation: behavior.humorAppreciation,
+      emotionalOpenness: behavior.emotionalOpenness,
+      totalMessages: stats.totalMessages,
+      totalChats: stats.totalChats,
+      quizzesTaken: stats.quizzesTaken,
+      streakDays: streak?.current_streak || 0,
+      voiceMinutes: voiceUsage,
+    } : null
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -244,7 +263,7 @@ const Profile = () => {
             <p className="text-sm text-muted-foreground">{user?.email}</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
-                Bhote AI Member
+                🏆 Founding Member of Discoverse
               </span>
             </div>
           </div>
@@ -371,13 +390,21 @@ const Profile = () => {
             <Leaderboard />
           </div>
         ) : activeTab === "behavior" ? (
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-4 space-y-4">
             {user && (
-              <UserBehaviorCard 
-                userId={user.id} 
-                isPro={subscription.tier !== "free"}
-                onUpdate={() => {}}
-              />
+              <>
+                <UserBehaviorCard 
+                  userId={user.id} 
+                  isPro={subscription.tier !== "free"}
+                  onUpdate={() => {}}
+                />
+                <AchievementsCard
+                  achievements={achievements}
+                  unlockedCount={unlockedCount}
+                  totalCount={totalCount}
+                  progress={achievementProgress}
+                />
+              </>
             )}
           </div>
         ) : (
@@ -485,31 +512,6 @@ const Profile = () => {
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
 
-            <button
-              onClick={() => navigate("/ielts")}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Languages className="w-5 h-5 text-emerald-600" />
-                </div>
-                <span className="font-medium">IELTS Practice</span>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-
-            <button
-              onClick={() => navigate("/student")}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-teal-600" />
-                </div>
-                <span className="font-medium">Student Mode</span>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
           </div>
         </div>
           </>
