@@ -93,8 +93,23 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 text-center">
+      <footer className="py-6 text-center space-y-2">
         <p className="text-xs text-muted-foreground/40">Discoverse 0.1 Model • Nepal's AI</p>
+        <div className="flex items-center justify-center gap-3 text-[10px]">
+          <button 
+            onClick={() => navigate("/terms")}
+            className="text-muted-foreground/50 hover:text-foreground transition-colors"
+          >
+            Terms
+          </button>
+          <span className="text-muted-foreground/30">•</span>
+          <button 
+            onClick={() => navigate("/privacy")}
+            className="text-muted-foreground/50 hover:text-foreground transition-colors"
+          >
+            Privacy
+          </button>
+        </div>
       </footer>
     </main>
   );

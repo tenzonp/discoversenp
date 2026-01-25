@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useVoiceSession } from "@/hooks/useVoiceSession";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useCelebration } from "@/hooks/useCelebration";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import LiveAnalysisPanel from "./LiveAnalysisPanel";
 import SessionHistoryPanel from "./SessionHistoryPanel";
+import VoiceAnalyticsDashboard from "../VoiceAnalyticsDashboard";
 import {
   Mic,
   MicOff,
@@ -16,6 +18,7 @@ import {
   Volume2,
   Loader2,
   History,
+  BarChart3,
 } from "lucide-react";
 
 interface IELTSPracticePanelProps {
@@ -28,6 +31,9 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
   const { subscription } = useSubscription(userId);
   const isPro = subscription.tier === "pro" || subscription.tier === "premium";
   const [showHistory, setShowHistory] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const { celebrate, celebrateAchievement } = useCelebration();
+  const [hasTriggeredCelebration, setHasTriggeredCelebration] = useState(false);
   
   const {
     isSessionActive,
@@ -48,6 +54,39 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
   } = useVoiceSession(userId);
 
   const isLimitReached = !isPro && remainingSeconds <= 0;
+  
+  // Check for high band score (7+) and trigger celebration
+  useEffect(() => {
+    if (!hasTriggeredCelebration && liveScore.overall > 0) {
+      const bandScore = Math.round((liveScore.overall / 100) * 9 * 10) / 10;
+      if (bandScore >= 7) {
+        celebrate("milestone");
+        celebrateAchievement(`Band Score ${bandScore}! 🎯`);
+        setHasTriggeredCelebration(true);
+      }
+    }
+  }, [liveScore.overall, hasTriggeredCelebration, celebrate, celebrateAchievement]);
+
+  // Reset celebration flag when session ends
+  useEffect(() => {
+    if (!isSessionActive) {
+      setHasTriggeredCelebration(false);
+    }
+  }, [isSessionActive]);
+
+  // Show analytics panel
+  if (showAnalytics && userId) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in">
+        <div className="h-full max-w-2xl mx-auto">
+          <VoiceAnalyticsDashboard
+            userId={userId}
+            onClose={() => setShowAnalytics(false)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Show history panel
   if (showHistory && userId) {
@@ -80,13 +119,22 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
           
           <div className="flex items-center gap-2">
             {userId && (
-              <button
-                onClick={() => setShowHistory(true)}
-                className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                title="Session History"
-              >
-                <History className="w-5 h-5" />
-              </button>
+              <>
+                <button
+                  onClick={() => setShowAnalytics(true)}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                  title="Analytics Dashboard"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                  title="Session History"
+                >
+                  <History className="w-5 h-5" />
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -242,15 +290,24 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
                 ))}
               </div>
 
-              {/* View History Button */}
+              {/* Quick Actions */}
               {userId && (
-                <button
-                  onClick={() => setShowHistory(true)}
-                  className="flex items-center gap-2 mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <History className="w-4 h-4" />
-                  View Past Sessions
-                </button>
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => setShowAnalytics(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-sm"
+                  >
+                    <BarChart3 className="w-4 h-4 text-primary" />
+                    Analytics
+                  </button>
+                  <button
+                    onClick={() => setShowHistory(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors text-sm"
+                  >
+                    <History className="w-4 h-4 text-muted-foreground" />
+                    History
+                  </button>
+                </div>
               )}
             </div>
           ) : (
