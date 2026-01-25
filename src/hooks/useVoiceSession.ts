@@ -110,7 +110,7 @@ export function useVoiceSession(userId: string | undefined) {
     }
   }, [userId]);
 
-  // Text to speech
+  // Text to speech - optimized for clear female voice (FREE browser TTS)
   const speakText = useCallback((text: string, onComplete?: () => void) => {
     if (!("speechSynthesis" in window)) {
       onComplete?.();
@@ -120,21 +120,60 @@ export function useVoiceSession(userId: string | undefined) {
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
+    utterance.lang = "en-GB"; // British English for IELTS
+    utterance.rate = 0.92; // Slightly slower for clarity
+    utterance.pitch = 1.05; // Slightly higher for female voice
+    utterance.volume = 1;
 
-    // Try to use a good voice
+    // Get best female voice available
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => 
-      v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("female") || v.name.includes("Google")
-    );
-    if (preferredVoice) utterance.voice = preferredVoice;
+    
+    // Priority order for best quality female voices (all FREE browser voices)
+    const preferredVoices = [
+      "Google UK English Female",
+      "Microsoft Libby Online (Natural)",
+      "Microsoft Aria Online (Natural)", 
+      "Samantha",
+      "Karen",
+      "Victoria",
+      "Moira",
+      "Fiona",
+      "Google US English",
+      "Microsoft Zira",
+    ];
+    
+    let selectedVoice = null;
+    for (const preferred of preferredVoices) {
+      selectedVoice = voices.find(v => 
+        v.name.includes(preferred) || v.name.toLowerCase().includes(preferred.toLowerCase())
+      );
+      if (selectedVoice) break;
+    }
+    
+    // Fallback: find any English female voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => 
+        (v.lang.startsWith("en") && 
+         (v.name.toLowerCase().includes("female") || 
+          v.name.includes("Zira") ||
+          v.name.includes("Hazel") ||
+          v.name.includes("Susan")))
+      );
+    }
+    
+    // Final fallback: any English voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(v => v.lang.startsWith("en"));
+    }
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log("Using voice:", selectedVoice.name);
+    }
 
     utterance.onstart = () => {
       setIsSpeaking(true);
       isSpeakingRef.current = true;
-      // Stop listening while speaking
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (e) {}
       }
@@ -144,7 +183,6 @@ export function useVoiceSession(userId: string | undefined) {
       setIsSpeaking(false);
       isSpeakingRef.current = false;
       onComplete?.();
-      // Resume listening
       if (isSessionActiveRef.current && recognitionRef.current) {
         setTimeout(() => {
           try {
@@ -407,8 +445,45 @@ export function useVoiceSession(userId: string | undefined) {
     }, 500);
   }, [remainingSeconds, initSpeechRecognition, speakText, toast]);
 
+  // Save session to database
+  const saveSession = useCallback(async () => {
+    if (!userId || messagesRef.current.length <= 1) return;
+    
+    try {
+      const bandScore = Math.round((liveScore.overall / 100) * 9 * 10) / 10;
+      
+      await supabase.from("voice_sessions").insert({
+        user_id: userId,
+        session_type: "ielts",
+        duration_seconds: sessionSeconds,
+        messages: messagesRef.current.map(m => ({
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp.toISOString(),
+        })),
+        band_score_estimate: bandScore > 0 ? bandScore : null,
+        emotion_summary: {
+          avgConfidence: liveScore.fluency,
+          avgEnergy: liveScore.vocabulary,
+          avgStress: 100 - liveScore.grammar,
+          avgEngagement: liveScore.pronunciation,
+        },
+        ai_feedback: liveScore.mistakes.length > 0 
+          ? `Areas to improve: ${liveScore.mistakes.join(". ")}` 
+          : null,
+      });
+      
+      console.log("Session saved successfully");
+    } catch (err) {
+      console.error("Failed to save session:", err);
+    }
+  }, [userId, sessionSeconds, liveScore]);
+
   // Stop session
-  const stopSession = useCallback(() => {
+  const stopSession = useCallback(async () => {
+    // Save session before stopping
+    await saveSession();
+    
     setIsSessionActive(false);
     isSessionActiveRef.current = false;
     setIsListening(false);
@@ -433,7 +508,7 @@ export function useVoiceSession(userId: string | undefined) {
     if (sessionSeconds > 0) {
       updateUsage(sessionSeconds);
     }
-  }, [sessionSeconds, updateUsage]);
+  }, [sessionSeconds, updateUsage, saveSession]);
 
   // Request feedback
   const requestFeedback = useCallback(() => {

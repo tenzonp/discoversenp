@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useVoiceSession } from "@/hooks/useVoiceSession";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import LiveAnalysisPanel from "./LiveAnalysisPanel";
+import SessionHistoryPanel from "./SessionHistoryPanel";
 import {
   Mic,
   MicOff,
@@ -13,6 +15,7 @@ import {
   Clock,
   Volume2,
   Loader2,
+  History,
 } from "lucide-react";
 
 interface IELTSPracticePanelProps {
@@ -24,6 +27,7 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
   const navigate = useNavigate();
   const { subscription } = useSubscription(userId);
   const isPro = subscription.tier === "pro" || subscription.tier === "premium";
+  const [showHistory, setShowHistory] = useState(false);
   
   const {
     isSessionActive,
@@ -45,6 +49,20 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
 
   const isLimitReached = !isPro && remainingSeconds <= 0;
 
+  // Show history panel
+  if (showHistory && userId) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in">
+        <div className="h-full max-w-2xl mx-auto">
+          <SessionHistoryPanel
+            userId={userId}
+            onClose={() => setShowHistory(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-fade-in">
       <div className="h-full flex flex-col max-w-2xl mx-auto">
@@ -60,12 +78,23 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
             </div>
           </div>
           
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {userId && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                title="Session History"
+              >
+                <History className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Time Display */}
@@ -164,6 +193,17 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
                   </div>
                 ))}
               </div>
+
+              {/* View History Button */}
+              {userId && (
+                <button
+                  onClick={() => setShowHistory(true)}
+                  className="flex items-center gap-2 mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <History className="w-4 h-4" />
+                  View Past Sessions
+                </button>
+              )}
             </div>
           ) : (
             // Active Session
