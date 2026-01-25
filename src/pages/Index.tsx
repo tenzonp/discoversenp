@@ -12,7 +12,7 @@ const modes: { id: ChatMode; label: string; sub: string; emoji: string }[] = [
   { id: "friend", emoji: "😎", label: "Sathi", sub: "Chill & casual" },
   { id: "professional", emoji: "💼", label: "Pro", sub: "Formal mode" },
   { id: "exam", emoji: "📚", label: "Exam", sub: "Focus study" },
-  { id: "cultural", emoji: "🇳🇵", label: "Nepali", sub: "Local vibes" },
+  { id: "ielts", emoji: "🎙️", label: "IELTS", sub: "Voice practice" },
 ];
 
 const Index = () => {

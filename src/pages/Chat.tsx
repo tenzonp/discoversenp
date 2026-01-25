@@ -25,6 +25,7 @@ import { FormulaSheet } from "@/components/chat/FormulaSheet";
 import { StudyNotesPanel } from "@/components/chat/StudyNotesPanel";
 import { FlashcardPanel } from "@/components/chat/FlashcardPanel";
 import { DailyQuestionsPanel } from "@/components/chat/DailyQuestionsPanel";
+import IELTSPracticePanel from "@/components/ielts/IELTSPracticePanel";
 import { cn } from "@/lib/utils";
 import { GraduationCap, Calculator, BookOpen, Layers, Lightbulb } from "lucide-react";
 
@@ -32,7 +33,7 @@ const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
   professional: { title: "Namaste", subtitle: "Kasari help garnu?" },
   exam: { title: "📚 Study Mode", subtitle: "Focus on your curriculum" },
-  cultural: { title: "नमस्ते", subtitle: "Nepali ma kura garaum" },
+  ielts: { title: "🎙️ IELTS Practice", subtitle: "Speak with AI examiner" },
 };
 
 const Chat = () => {
@@ -463,6 +464,14 @@ INSTRUCTIONS FOR EXAM MODE:
           userId={user.id}
           isOpen={showGallery}
           onClose={() => setShowGallery(false)}
+        />
+      )}
+
+      {/* IELTS Practice Panel */}
+      {mode === "ielts" && (
+        <IELTSPracticePanel
+          userId={user?.id}
+          onClose={() => setMode("friend")}
         />
       )}
     </div>

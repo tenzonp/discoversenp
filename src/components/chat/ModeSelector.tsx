@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type ChatMode = "friend" | "professional" | "exam" | "cultural";
+export type ChatMode = "friend" | "professional" | "exam" | "ielts";
 
 interface ModeSelectorProps {
   currentMode: ChatMode;
@@ -11,7 +11,7 @@ const modes: { id: ChatMode; label: string; sub: string }[] = [
   { id: "friend", label: "Sathi", sub: "Chill" },
   { id: "professional", label: "Pro", sub: "Expert" },
   { id: "exam", label: "Exam", sub: "Focus" },
-  { id: "cultural", label: "Nepali", sub: "Local" },
+  { id: "ielts", label: "IELTS", sub: "Voice" },
 ];
 
 const ModeSelector = ({ currentMode, onModeChange }: ModeSelectorProps) => {

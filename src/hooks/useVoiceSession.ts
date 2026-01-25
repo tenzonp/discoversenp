@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const MAX_FREE_SECONDS = 30 * 60; // 30 minutes per day
+const MAX_FREE_SECONDS = 2 * 60; // 2 minutes per day free trial
 
 interface VoiceMessage {
   id: string;
