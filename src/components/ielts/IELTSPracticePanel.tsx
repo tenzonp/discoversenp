@@ -120,7 +120,7 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
                   )}>
                     {formatTime(Math.max(0, remainingSeconds))}
                   </span>
-                  <span className="text-xs text-muted-foreground">/2:00</span>
+                  <span className="text-xs text-muted-foreground">/3:00</span>
                 </>
               )}
             </div>
@@ -142,23 +142,71 @@ const IELTSPracticePanel = ({ userId, onClose }: IELTSPracticePanelProps) => {
               </p>
 
               {isLimitReached ? (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-muted border border-border">
-                    <p className="text-sm text-foreground mb-2">
-                      Daily free practice used! 🕐
+                <div className="space-y-6 w-full max-w-md">
+                  {/* Limit Reached Notice */}
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-center">
+                    <p className="text-base font-medium text-foreground mb-1">
+                      Daily Free Trial Sakiyo! 🕐
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Bholi feri 2 min free milcha
+                      3 minute free practice sakyo aaja. Bholi feri milcha!
                     </p>
                   </div>
-                  
+
+                  {/* Comparison Table */}
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="grid grid-cols-3 bg-muted/50 text-xs font-medium p-3 border-b border-border">
+                      <span>Feature</span>
+                      <span className="text-center">Free</span>
+                      <span className="text-center text-primary">Pro ✨</span>
+                    </div>
+                    
+                    <div className="divide-y divide-border text-sm">
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Daily Time</span>
+                        <span className="text-center">3 min</span>
+                        <span className="text-center text-primary font-medium">30 min</span>
+                      </div>
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Real-time Scoring</span>
+                        <span className="text-center">✓</span>
+                        <span className="text-center text-primary">✓</span>
+                      </div>
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Session History</span>
+                        <span className="text-center text-muted-foreground/50">—</span>
+                        <span className="text-center text-primary">✓</span>
+                      </div>
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Detailed Feedback</span>
+                        <span className="text-center text-muted-foreground/50">—</span>
+                        <span className="text-center text-primary">✓</span>
+                      </div>
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Band Score Track</span>
+                        <span className="text-center text-muted-foreground/50">—</span>
+                        <span className="text-center text-primary">✓</span>
+                      </div>
+                      <div className="grid grid-cols-3 p-3 items-center">
+                        <span className="text-muted-foreground">Priority Voice</span>
+                        <span className="text-center text-muted-foreground/50">—</span>
+                        <span className="text-center text-primary">✓</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upgrade Button */}
                   <button
                     onClick={() => navigate("/profile")}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg"
                   >
-                    <Crown className="w-4 h-4" />
-                    Upgrade to Pro - Unlimited Practice
+                    <Crown className="w-5 h-5" />
+                    Upgrade to Pro - रू 299/month
                   </button>
+                  
+                  <p className="text-xs text-center text-muted-foreground">
+                    10x more practice time • Better scores • Full analytics
+                  </p>
                 </div>
               ) : (
                 <button
