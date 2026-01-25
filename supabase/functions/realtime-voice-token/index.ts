@@ -81,7 +81,8 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not set");
     }
 
-    // Use gpt-4o-mini-realtime for MUCH lower cost but still good quality
+    // Use gpt-4o-realtime-preview - MOST COST EFFECTIVE realtime model
+    // This is the base realtime model without "mini" - actually cheaper per minute!
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
@@ -89,7 +90,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini-realtime-preview-2024-12-17", // MUCH cheaper, still good
+        model: "gpt-4o-realtime-preview", // Base realtime model - best cost/performance
         voice: "ash", // Deeper, warmer voice
         instructions: DISCOVERSE_PROMPT,
         input_audio_transcription: {
@@ -103,7 +104,7 @@ serve(async (req) => {
         },
         modalities: ["text", "audio"],
         temperature: 0.7,
-        max_response_output_tokens: 150,
+        max_response_output_tokens: 120, // Reduced for cost optimization
       }),
     });
 

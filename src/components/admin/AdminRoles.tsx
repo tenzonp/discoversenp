@@ -5,13 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { PRIMARY_ADMIN_EMAIL } from "@/hooks/useAdmin";
 import { 
   Shield, 
   UserPlus, 
   Trash2,
   Loader2,
   Crown,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from "lucide-react";
 
 interface AdminRole {
@@ -88,10 +90,16 @@ export default function AdminRoles() {
   };
 
   const removeAdmin = async (roleId: string, email: string) => {
-    if (email === "iscillatechnologies@gmail.com") {
-      toast.error("Cannot remove the primary admin");
+    // SECURITY: Primary admin cannot be removed
+    if (email === PRIMARY_ADMIN_EMAIL) {
+      toast.error("Cannot remove the primary admin - this action is blocked");
+      console.warn(`[SECURITY] Attempted to remove primary admin: ${email}`);
       return;
     }
+
+    // Double confirmation for security
+    const confirmed = window.confirm(`Are you sure you want to remove admin access for ${email}? This action will be logged.`);
+    if (!confirmed) return;
 
     setRemoving(roleId);
     try {
@@ -103,6 +111,7 @@ export default function AdminRoles() {
       if (error) throw error;
 
       toast.success("Admin role removed");
+      console.log(`[ADMIN] Removed admin role for: ${email}`);
       loadAdmins();
     } catch (err) {
       console.error("Error removing admin:", err);
@@ -195,8 +204,11 @@ export default function AdminRoles() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {admin.email === "iscillatechnologies@gmail.com" ? (
-                    <Badge variant="secondary">Primary</Badge>
+                  {admin.email === PRIMARY_ADMIN_EMAIL ? (
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Primary
+                    </Badge>
                   ) : (
                     <Button
                       variant="ghost"
