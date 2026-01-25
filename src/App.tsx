@@ -35,7 +35,9 @@ const App = () => (
             <Route path="/shared" element={<SharedChat />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            {/* Admin route - protected internally, no visible link for non-admins */}
             <Route path="/admin" element={<Admin />} />
+            {/* Catch-all for 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
