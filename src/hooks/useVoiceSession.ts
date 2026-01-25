@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const MAX_FREE_SECONDS = 2 * 60; // 2 minutes per day free trial
+const MAX_FREE_SECONDS = 3 * 60; // 3 minutes per day free trial for IELTS
 
 interface VoiceMessage {
   id: string;
@@ -377,7 +377,7 @@ export function useVoiceSession(userId: string | undefined) {
     if (remainingSeconds <= 0) {
       toast({ 
         title: "Daily limit pugyo! 🕐", 
-        description: "30 min bhayo aaja. Bholi feri practice gara!", 
+        description: "3 minute free trial sakiyo aaja. Pro kinera 30 min daily paauna!", 
         variant: "destructive" 
       });
       return;
