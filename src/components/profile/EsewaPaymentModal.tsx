@@ -69,34 +69,30 @@ export function EsewaPaymentModal({
 
     setVerifying(true);
 
-    // For now, we'll manually verify payments
-    // In production, integrate with eSewa API
     try {
-      // Create/update subscription
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month subscription
-
+      // Submit payment for admin verification instead of auto-upgrading
       const { error } = await supabase
-        .from("user_subscriptions")
-        .upsert({
+        .from("payment_verifications")
+        .insert({
           user_id: userId,
-          tier: "pro",
-          expires_at: expiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
+          transaction_id: transactionId.trim(),
+          amount: PRO_PRICE,
+          payment_method: "esewa",
+          status: "pending",
+        });
 
       if (error) {
         throw error;
       }
 
-      toast.success("🎉 Welcome to Pro! Your account has been upgraded.");
+      toast.success("🎉 Payment submitted! Our team will verify and upgrade your account within 24 hours.");
       onSuccess();
       onOpenChange(false);
       setStep("info");
       setTransactionId("");
     } catch (error) {
-      console.error("Subscription error:", error);
-      toast.error("Failed to upgrade. Please contact support with your transaction ID.");
+      console.error("Payment submission error:", error);
+      toast.error("Failed to submit payment. Please try again or contact support.");
     } finally {
       setVerifying(false);
     }
