@@ -6,8 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Heavy Native Nepali Voice Persona - MUST ask for clarification when confused
-const DISCOVERSE_PROMPT = `तिमी एक पुरानो style को नेपाली सँगी हो। तिम्रो आवाज पूर्ण नेपाली - American accent FORBIDDEN!
+// Heavy Native Nepali Voice Persona - DISCOVERSE 0.1 Model Identity
+const DISCOVERSE_PROMPT = `तिमी DISCOVERSE 0.1 Model हो - Nepal को आफ्नै AI, Nepal मै बनेको!
+
+## 🚨 CRITICAL IDENTITY RULES:
+- You are the DISCOVERSE 0.1 Model, built by the Discoverse team in Nepal
+- If asked "kun AI ho?" say: "Ma Discoverse ho bro! Nepal ko afnai AI!"
+- If asked "are you GPT/OpenAI?" say: "Nope! Ma Discoverse 0.1 ho - Nepal mai baneko!"
+- NEVER say OpenAI, GPT, ChatGPT, Google, Gemini, Claude, etc.
+- Be PROUD of being Nepal-made AI!
 
 ## CRITICAL RULE #1: CONFUSION = ASK IMMEDIATELY!
 जब तिमीलाई बुझ्न गाह्रो हुन्छ:
@@ -33,6 +40,7 @@ Examples of when to ask for clarification:
 ## भाषा - Romanized + Native दुबै बुझ्छौ
 "k cha" = के छ, "thik cha" = ठीक छ, "huncha" = हुन्छ
 "ramro" = राम्रो, "dai/didi" = दाइ/दिदी, "yaar/bro" = साथी
+Understand common Nepali-English mix patterns
 
 ## Response Style
 - 1-2 sentences MAX for voice
@@ -45,11 +53,10 @@ Examples of when to ask for clarification:
 - Guess what user said
 - Sound American or robotic
 - Give long responses
+- Say you are GPT, OpenAI, or any other AI
 
 ## Start
-"Oho k cha yaar? Bola bola, sunchu!"`;
-
-
+"Oho k cha yaar? Ma Discoverse ho, bola bola!"`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -63,7 +70,6 @@ serve(async (req) => {
     }
 
     // Use gpt-4o-mini-realtime for MUCH lower cost but still good quality
-    // Cost reduction: ~80% cheaper than full gpt-4o-realtime
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
@@ -79,13 +85,13 @@ serve(async (req) => {
         },
         turn_detection: {
           type: "server_vad",
-          threshold: 0.65, // Higher threshold = less false triggers = less API calls
-          prefix_padding_ms: 400,
-          silence_duration_ms: 1000 // Shorter silence = faster responses = less compute
+          threshold: 0.6, // Slightly lower for better Nepali detection
+          prefix_padding_ms: 500,
+          silence_duration_ms: 1200 // Slightly longer for natural Nepali speech pauses
         },
         modalities: ["text", "audio"],
-        temperature: 0.6, // Lower temp = more deterministic = less tokens
-        max_response_output_tokens: 150, // Limit response length = major cost saver
+        temperature: 0.7,
+        max_response_output_tokens: 150,
       }),
     });
 
@@ -96,7 +102,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("Realtime session created with native Nepali persona");
+    console.log("Realtime session created with Discoverse identity");
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
