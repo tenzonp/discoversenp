@@ -34,6 +34,7 @@ const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   professional: { title: "Welcome", subtitle: "How may I assist you?" },
   exam: { title: "📚 Study Mode", subtitle: "Focus on your curriculum" },
   ielts: { title: "🎙️ IELTS Practice", subtitle: "Speak with AI examiner" },
+  roast: { title: "🔥 Roast Mode", subtitle: "Tell me about your group" },
 };
 
 const Chat = () => {

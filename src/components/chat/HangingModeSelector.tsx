@@ -12,6 +12,7 @@ const modes: { id: ChatMode; label: string; emoji: string }[] = [
   { id: "professional", label: "Pro", emoji: "💼" },
   { id: "exam", label: "Study", emoji: "📚" },
   { id: "ielts", label: "IELTS", emoji: "🎙️" },
+  { id: "roast", label: "Roast", emoji: "🔥" },
 ];
 
 const HangingModeSelector = ({ currentMode, onModeChange }: HangingModeSelectorProps) => {

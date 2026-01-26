@@ -13,6 +13,7 @@ const modes: { id: ChatMode; label: string; emoji: string }[] = [
   { id: "professional", label: "Pro (EN)", emoji: "💼" },
   { id: "exam", label: "Study", emoji: "📚" },
   { id: "ielts", label: "IELTS", emoji: "🎙️" },
+  { id: "roast", label: "Roast Group", emoji: "🔥" },
 ];
 
 const ModeDropdown = ({ currentMode, onModeChange }: ModeDropdownProps) => {
