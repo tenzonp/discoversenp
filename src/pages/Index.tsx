@@ -13,6 +13,7 @@ const modes: { id: ChatMode; label: string; sub: string; emoji: string }[] = [
   { id: "professional", emoji: "💼", label: "Pro", sub: "English formal" },
   { id: "exam", emoji: "📚", label: "Exam", sub: "Focus study" },
   { id: "ielts", emoji: "🎙️", label: "IELTS", sub: "Voice practice" },
+  { id: "roast", emoji: "🔥", label: "Roast", sub: "Roast my group" },
 ];
 
 const Index = () => {
