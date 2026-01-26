@@ -31,7 +31,7 @@ import { GraduationCap, Calculator, BookOpen, Layers, Lightbulb } from "lucide-r
 
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
-  professional: { title: "Namaste", subtitle: "Kasari help garnu?" },
+  professional: { title: "Welcome", subtitle: "How may I assist you?" },
   exam: { title: "📚 Study Mode", subtitle: "Focus on your curriculum" },
   ielts: { title: "🎙️ IELTS Practice", subtitle: "Speak with AI examiner" },
 };
