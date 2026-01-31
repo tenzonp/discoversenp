@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
   professional: { title: "Welcome", subtitle: "How may I assist you?" },
-  life: { title: "⚡ Life Admin", subtitle: "What needs doing?" },
+  jugaad: { title: "🔄 Jugaad", subtitle: "K solve garnu cha?" },
   roast: { title: "🔥 Roast Mode", subtitle: "Tell me about your group" },
 };
 
@@ -136,9 +136,9 @@ const Chat = () => {
     // Check if we should auto-search
     const searchQueryToUse = webSearchQuery || (shouldAutoSearch(content) ? content : null);
     
-    // Add life admin context
-    if (mode === "life") {
-      fullContext += `\n\n⚡ LIFE ADMIN MODE ACTIVE - Help the user with practical life tasks efficiently.`;
+    // Add jugaad mode context
+    if (mode === "jugaad") {
+      fullContext += `\n\n🔄 JUGAAD MODE ACTIVE - Be Nepal's street-smart AI. Give specific answers about government processes, salaries, prices, form filling. No vague advice - give REAL numbers, locations, steps.`;
     }
     
     if (searchQueryToUse) {
