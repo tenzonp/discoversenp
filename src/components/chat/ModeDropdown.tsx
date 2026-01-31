@@ -11,8 +11,7 @@ interface ModeDropdownProps {
 const modes: { id: ChatMode; label: string; emoji: string }[] = [
   { id: "friend", label: "Sathi", emoji: "😎" },
   { id: "professional", label: "Pro (EN)", emoji: "💼" },
-  { id: "exam", label: "Study", emoji: "📚" },
-  { id: "ielts", label: "IELTS", emoji: "🎙️" },
+  { id: "life", label: "Life Admin", emoji: "⚡" },
   { id: "roast", label: "Roast Group", emoji: "🔥" },
 ];
 
