@@ -8,15 +8,15 @@ interface WelcomeScreenProps {
 const defaultSuggestions = [
   { text: "K cha?", sub: "Casual chat" },
   { text: "Help me decide something", sub: "Decision engine" },
-  { text: "Generate a CV for me", sub: "Documents" },
+  { text: "Bore bhayo, kei ramro idea de", sub: "Fun ideas" },
   { text: "Kei explain gar", sub: "Learn something" },
 ];
 
-const lifeSuggestions = [
-  { text: "Write my CV/Resume", sub: "Professional format" },
-  { text: "Help me make a decision", sub: "Structured framework" },
-  { text: "Draft a formal letter", sub: "Application/complaint" },
-  { text: "Prepare me for negotiation", sub: "Salary/deals" },
+const jugaadSuggestions = [
+  { text: "Passport kasari banauney? Full process", sub: "🏛️ Sarkari Bato" },
+  { text: "80k salary KTM ma ramro ho?", sub: "💰 Market Intelligence" },
+  { text: "Laptop kaha bata kinnu sasto huncha?", sub: "🔄 Best Deals" },
+  { text: "Driving license form help", sub: "📋 Form Filler" },
 ];
 
 const professionalSuggestions = [
@@ -37,9 +37,9 @@ const WelcomeScreen = ({ onSuggestionClick, mode }: WelcomeScreenProps) => {
   let suggestions = defaultSuggestions;
   let headerText = "Kaha bata suru?";
   
-  if (mode === "life") {
-    suggestions = lifeSuggestions;
-    headerText = "⚡ Life Admin - What needs doing?";
+  if (mode === "jugaad") {
+    suggestions = jugaadSuggestions;
+    headerText = "🔄 Nepal's Street-Smart AI";
   } else if (mode === "professional") {
     suggestions = professionalSuggestions;
     headerText = "How may I assist you today?";

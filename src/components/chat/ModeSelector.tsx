@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type ChatMode = "friend" | "professional" | "life" | "roast";
+export type ChatMode = "friend" | "professional" | "jugaad" | "roast";
 
 interface ModeSelectorProps {
   currentMode: ChatMode;
@@ -10,7 +10,7 @@ interface ModeSelectorProps {
 const modes: { id: ChatMode; label: string; sub: string }[] = [
   { id: "friend", label: "Sathi", sub: "Chill" },
   { id: "professional", label: "Pro", sub: "Formal" },
-  { id: "life", label: "Life", sub: "Admin" },
+  { id: "jugaad", label: "Jugaad", sub: "Street-smart" },
   { id: "roast", label: "Roast", sub: "Group" },
 ];
 

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const modes: { id: ChatMode; label: string; sub: string; emoji: string }[] = [
   { id: "friend", emoji: "😎", label: "Sathi", sub: "Chill & casual" },
   { id: "professional", emoji: "💼", label: "Pro", sub: "English formal" },
-  { id: "life", emoji: "⚡", label: "Life", sub: "Your life admin" },
+  { id: "jugaad", emoji: "🔄", label: "Jugaad", sub: "Nepal's street-smart AI" },
   { id: "roast", emoji: "🔥", label: "Roast", sub: "Roast my group" },
 ];
 
