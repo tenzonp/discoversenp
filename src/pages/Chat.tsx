@@ -7,6 +7,7 @@ import { useChatMemory } from "@/hooks/useChatMemory";
 import { useWebSearch } from "@/hooks/useWebSearch";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserBehavior } from "@/hooks/useUserBehavior";
+import { useJugaadKnowledge } from "@/hooks/useJugaadKnowledge";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -26,7 +27,7 @@ const modeGreetings: Record<ChatMode, { title: string; subtitle: string }> = {
   friend: { title: "Hey", subtitle: "K cha bro?" },
   professional: { title: "Welcome", subtitle: "How may I assist you?" },
   jugaad: { title: "🔄 Jugaad", subtitle: "K solve garnu cha?" },
-  roast: { title: "🔥 Roast Mode", subtitle: "Tell me about your group" },
+  roast: { title: "🔥 Roast Mode", subtitle: "Kasari halney? Tell me everything" },
 };
 
 const Chat = () => {
@@ -77,6 +78,7 @@ const Chat = () => {
 
   const { buildMoodContext, loadMoodHistory } = useMoodHistory(user?.id);
   const { buildMemoryContext, extractAndSaveInfo } = useChatMemory(user?.id);
+  const { searchKnowledge, buildKnowledgeContext } = useJugaadKnowledge(user?.id);
   const { 
     isSearching, 
     results: searchResults, 
@@ -133,15 +135,33 @@ const Chat = () => {
     const memoryContext = buildMemoryContext();
     let fullContext = memoryContext + moodContext;
     
-    // Check if we should auto-search
-    const searchQueryToUse = webSearchQuery || (shouldAutoSearch(content) ? content : null);
-    
-    // Add jugaad mode context
+    // Jugaad mode: Search knowledge base first
     if (mode === "jugaad") {
-      fullContext += `\n\n🔄 JUGAAD MODE ACTIVE - Be Nepal's street-smart AI. Give specific answers about government processes, salaries, prices, form filling. No vague advice - give REAL numbers, locations, steps.`;
+      const knowledgeResults = await searchKnowledge(content);
+      if (knowledgeResults.length > 0) {
+        fullContext += buildKnowledgeContext(knowledgeResults);
+      }
+      fullContext += `\n\n🔄 JUGAAD MODE ACTIVE - Be Nepal's street-smart AI. Give specific answers about government processes, salaries, prices, form filling. No vague advice - give REAL numbers, locations, steps. Use the knowledge base context if relevant.`;
     }
     
-    if (searchQueryToUse) {
+    // Roast mode: ALWAYS use web search for real-time roast material
+    if (mode === "roast") {
+      // Extract names or topics to search for roast material
+      const roastSearchQuery = webSearchQuery || content;
+      const results = await search(roastSearchQuery + " Nepal news trending", { limit: 5, timeFilter: 'qdr:w' });
+      if (results && results.length > 0) {
+        const roastContext = `\n\n🔍 REAL-TIME ROAST MATERIAL (Use these for DEVASTATING current roasts!):\n${results.slice(0, 5).map((r, i) => 
+          `${i + 1}. [${r.title}](${r.url})\n   ${r.description || r.markdown?.slice(0, 300) || ''}`
+        ).join('\n\n')}\n\n🔥 USE THIS INFO to make roasts CURRENT, RELEVANT, and VIRAL. Reference recent events, news, and trends!`;
+        fullContext += roastContext;
+      }
+      fullContext += `\n\n🔥 ROAST MODE ACTIVE - Be the MOST SAVAGE but loving roaster. Use the real-time info above for devastating current roasts. Make it SCREENSHOT-WORTHY and VIRAL!`;
+    }
+    
+    // Check if we should auto-search for other modes
+    const searchQueryToUse = webSearchQuery || (shouldAutoSearch(content) ? content : null);
+    
+    if (searchQueryToUse && mode !== "roast") { // Roast mode already searched above
       const results = await search(searchQueryToUse);
       if (results && results.length > 0) {
         const searchContext = `\n\n🔍 WEB SEARCH RESULTS for "${searchQueryToUse}":\n${results.slice(0, 5).map((r, i) => 
