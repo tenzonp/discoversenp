@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Mail, KeyRound, User, Sparkles, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, User, Sparkles, Lock, Eye, EyeOff, Chrome } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import DiscoverseText from "@/components/DiscoverseText";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type AuthMode = "otp" | "password";
-type AuthStep = "email" | "otp" | "password-login" | "signup-details" | "forgot-password" | "reset-password";
+type AuthStep = "main" | "signup-details" | "forgot-password" | "reset-password";
 
 const REMEMBER_ME_KEY = "discoverse_remember_me";
 
@@ -21,20 +20,19 @@ const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const [mode, setMode] = useState<AuthMode>("otp");
-  const [step, setStep] = useState<AuthStep>("email");
+  const [step, setStep] = useState<AuthStep>("main");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isSignup, setIsSignup] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => {
     const saved = localStorage.getItem(REMEMBER_ME_KEY);
-    return saved !== "false"; // Default to true
+    return saved !== "false";
   });
 
   // Handle session cleanup on browser close if "Remember Me" is unchecked
@@ -42,7 +40,6 @@ const Auth = () => {
     const handleBeforeUnload = () => {
       const shouldRemember = localStorage.getItem(REMEMBER_ME_KEY);
       if (shouldRemember === "false") {
-        // Clear session data when browser closes
         supabase.auth.signOut();
       }
     };
@@ -81,73 +78,29 @@ const Auth = () => {
     }
   }, [resendCooldown]);
 
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    
-    setLoading(true);
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-        },
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
 
-      if (error) throw error;
-
-      toast({
-        title: "OTP Sent! 📧",
-        description: `Check ${email} for your 6-digit code from Discoverse`,
-      });
-      
-      setStep("otp");
-      setResendCooldown(60);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to send OTP",
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 6) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otp,
-        type: "email",
-      });
-
-      if (error) throw error;
-
-      const isNew = !data.user?.user_metadata?.display_name;
-      
-      if (isNew) {
-        setStep("signup-details");
-      } else {
+      if (error) {
         toast({
-          title: "Welcome back! 🙏",
-          description: "Namaste, Discoverse ma swagat xa!",
+          variant: "destructive",
+          title: "Google Sign-In Failed",
+          description: error.message || "Please try again",
         });
-        navigate("/chat");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
       toast({
         variant: "destructive",
-        title: "Invalid OTP",
-        description: error.message || "Please check your code and try again",
+        title: "Google Sign-In Failed",
+        description: errorMessage,
       });
-      setOtp("");
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -196,11 +149,12 @@ const Auth = () => {
         });
         navigate("/chat");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
       toast({
         variant: "destructive",
         title: isSignup ? "Signup Failed" : "Login Failed",
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -224,11 +178,12 @@ const Auth = () => {
         description: "Check your email for the password reset link from Discoverse",
       });
       setResendCooldown(60);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
       toast({
         variant: "destructive",
         title: "Failed to send reset link",
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -259,15 +214,14 @@ const Auth = () => {
         description: "You can now login with your new password",
       });
       
-      // Clear hash and redirect
       window.location.hash = "";
-      setStep("email");
-      setMode("password");
-    } catch (error: any) {
+      setStep("main");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
       toast({
         variant: "destructive",
         title: "Reset Failed",
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -293,42 +247,12 @@ const Auth = () => {
         description: "Swagat xa! Welcome to Discoverse",
       });
       navigate("/chat");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Something went wrong";
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "OTP Resent! 📧",
-        description: "Check your inbox for the new code",
-      });
-      setResendCooldown(60);
-      setOtp("");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Failed to resend",
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -336,18 +260,10 @@ const Auth = () => {
   };
 
   const handleBack = () => {
-    if (step === "otp" || step === "password-login" || step === "forgot-password") {
-      setStep("email");
-      setOtp("");
+    if (step === "forgot-password") {
+      setStep("main");
       setPassword("");
     }
-  };
-
-  const switchMode = () => {
-    setMode(mode === "otp" ? "password" : "otp");
-    setStep("email");
-    setPassword("");
-    setOtp("");
   };
 
   if (authLoading) {
@@ -365,7 +281,7 @@ const Auth = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={step === "email" ? () => navigate("/") : handleBack} 
+          onClick={step === "main" ? () => navigate("/") : handleBack} 
           className="w-8 h-8 rounded-full"
           disabled={step === "signup-details" || step === "reset-password"}
         >
@@ -382,9 +298,7 @@ const Auth = () => {
               <DiscoverseText size="lg" showVersion />
             </div>
             <p className="text-sm text-muted-foreground">
-              {step === "email" && (mode === "otp" ? "Sign in with email OTP" : (isSignup ? "Create your account" : "Sign in with password"))}
-              {step === "otp" && "Enter the code sent to your email"}
-              {step === "password-login" && "Enter your password"}
+              {step === "main" && (isSignup ? "Create your account" : "Welcome back")}
               {step === "signup-details" && "Complete your profile"}
               {step === "forgot-password" && "Reset your password"}
               {step === "reset-password" && "Set your new password"}
@@ -492,7 +406,7 @@ const Auth = () => {
               <p className="text-center">
                 <button
                   type="button"
-                  onClick={() => setStep("email")}
+                  onClick={() => setStep("main")}
                   className="text-sm text-muted-foreground hover:text-foreground"
                 >
                   Back to login
@@ -501,250 +415,185 @@ const Auth = () => {
             </form>
           )}
 
-          {/* Email Step */}
-          {step === "email" && (
-            <form onSubmit={mode === "otp" ? handleSendOTP : handlePasswordAuth} className="space-y-5">
-              {mode === "password" && isSignup && (
+          {/* Main Auth Step */}
+          {step === "main" && (
+            <div className="space-y-5">
+              {/* Google Sign-In Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading}
+                className="w-full h-12 rounded-xl text-base font-medium border-2 hover:bg-muted/50"
+              >
+                {googleLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                    </svg>
+                    Continue with Google
+                  </>
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with email
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handlePasswordAuth} className="space-y-4">
+                {isSignup && (
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName" className="text-sm flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Your Name
+                    </Label>
+                    <Input
+                      id="displayName"
+                      type="text"
+                      placeholder="What should we call you?"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="displayName" className="text-sm flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    Your Name
+                  <Label htmlFor="email" className="text-sm flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Address
                   </Label>
                   <Input
-                    id="displayName"
-                    type="text"
-                    placeholder="What should we call you?"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="h-12 rounded-xl"
+                    id="email"
+                    type="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-12 rounded-xl text-base"
+                    autoComplete="email"
+                    autoFocus
                   />
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-12 rounded-xl text-base"
-                  autoComplete="email"
-                  autoFocus
-                />
-              </div>
-
-              {mode === "password" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm flex items-center gap-2">
-                      <Lock className="w-4 h-4" />
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="h-12 rounded-xl pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {isSignup && (
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="h-12 rounded-xl"
-                      />
-                    </div>
-                  )}
-
-                  {!isSignup && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="rememberMe" 
-                          checked={rememberMe}
-                          onCheckedChange={(checked) => setRememberMe(checked === true)}
-                        />
-                        <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
-                          Remember me
-                        </Label>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setStep("forgot-password")}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <Button
-                type="submit"
-                disabled={loading || !email.trim() || (mode === "password" && !password)}
-                className="w-full h-12 rounded-xl text-base font-medium"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : mode === "otp" ? (
-                  <>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Send OTP Code
-                  </>
-                ) : isSignup ? (
-                  "Create Account"
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-
-              {mode === "otp" && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center space-x-2">
-                    <Checkbox 
-                      id="rememberMeOtp" 
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-12 rounded-xl pr-10"
                     />
-                    <Label htmlFor="rememberMeOtp" className="text-sm text-muted-foreground cursor-pointer">
-                      Remember me on this device
-                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                  <p className="text-xs text-center text-muted-foreground">
-                    We'll send a 6-digit code to your email. No password needed!
-                  </p>
-                </div>
-              )}
-
-              {mode === "password" && (
-                <p className="text-center text-sm text-muted-foreground">
-                  {isSignup ? "Already have an account? " : "Don't have an account? "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignup(!isSignup);
-                      setPassword("");
-                      setConfirmPassword("");
-                    }}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isSignup ? "Sign In" : "Sign Up"}
-                  </button>
-                </p>
-              )}
-
-              {/* Mode Switcher */}
-              <div className="pt-4 border-t border-border">
-                <button
-                  type="button"
-                  onClick={switchMode}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {mode === "otp" ? (
-                    <>
-                      <Lock className="w-4 h-4 inline mr-1" />
-                      Use password instead
-                    </>
-                  ) : (
-                    <>
-                      <KeyRound className="w-4 h-4 inline mr-1" />
-                      Use OTP instead (no password)
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* OTP Step */}
-          {step === "otp" && (
-            <form onSubmit={handleVerifyOTP} className="space-y-6">
-              <div className="space-y-4">
-                <Label className="text-sm flex items-center gap-2 justify-center">
-                  <KeyRound className="w-4 h-4" />
-                  Enter 6-Digit Code
-                </Label>
-                
-                <div className="flex justify-center">
-                  <InputOTP 
-                    maxLength={6} 
-                    value={otp} 
-                    onChange={setOtp}
-                    autoFocus
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} className="w-12 h-14 text-xl" />
-                      <InputOTPSlot index={1} className="w-12 h-14 text-xl" />
-                      <InputOTPSlot index={2} className="w-12 h-14 text-xl" />
-                      <InputOTPSlot index={3} className="w-12 h-14 text-xl" />
-                      <InputOTPSlot index={4} className="w-12 h-14 text-xl" />
-                      <InputOTPSlot index={5} className="w-12 h-14 text-xl" />
-                    </InputOTPGroup>
-                  </InputOTP>
                 </div>
 
-                <p className="text-xs text-center text-muted-foreground">
-                  Code sent to <span className="font-medium text-foreground">{email}</span>
-                </p>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading || otp.length !== 6}
-                className="w-full h-12 rounded-xl text-base font-medium"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Verify & Continue
-                  </>
+                {isSignup && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
                 )}
-              </Button>
 
-              <div className="text-center">
+                {!isSignup && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="rememberMe" 
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+                        Remember me
+                      </Label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep("forgot-password")}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading || !email.trim() || !password}
+                  className="w-full h-12 rounded-xl text-base font-medium"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isSignup ? (
+                    "Create Account"
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+              </form>
+
+              <p className="text-center text-sm text-muted-foreground">
+                {isSignup ? "Already have an account? " : "Don't have an account? "}
                 <button
                   type="button"
-                  onClick={handleResendOTP}
-                  disabled={loading || resendCooldown > 0}
-                  className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  onClick={() => {
+                    setIsSignup(!isSignup);
+                    setPassword("");
+                    setConfirmPassword("");
+                  }}
+                  className="text-primary hover:underline font-medium"
                 >
-                  {resendCooldown > 0 
-                    ? `Resend code in ${resendCooldown}s` 
-                    : "Didn't receive code? Resend"
-                  }
+                  {isSignup ? "Sign In" : "Sign Up"}
                 </button>
-              </div>
-            </form>
+              </p>
+            </div>
           )}
 
           {/* Signup Details Step */}
