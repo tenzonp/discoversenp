@@ -27,10 +27,10 @@ const professionalSuggestions = [
 ];
 
 const roastSuggestions = [
-  { text: "Roast my friend group", sub: "Tell me about them" },
-  { text: "Roast based on our photo", sub: "Send group pic" },
-  { text: "Roast my college squad", sub: "Batch stereotypes" },
-  { text: "Roast my work team", sub: "Office politics" },
+  { text: "Roast my friend group - 5 jana engineering students", sub: "💀 Group Dynamics Roast" },
+  { text: "Roast this person: [name] works at [company]", sub: "🔍 Deep Research Roast" },
+  { text: "Roast my college batch - BBA 2021", sub: "🎓 Stereotype Massacre" },
+  { text: "Roast based on our group photo", sub: "📸 Visual Destruction" },
 ];
 
 const WelcomeScreen = ({ onSuggestionClick, mode }: WelcomeScreenProps) => {

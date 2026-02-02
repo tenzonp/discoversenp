@@ -279,6 +279,48 @@ export type Database = {
         }
         Relationships: []
       }
+      nepal_knowledge_base: {
+        Row: {
+          answer: string
+          category: string
+          contributed_by: string | null
+          created_at: string
+          id: string
+          keywords: string[] | null
+          last_updated: string | null
+          question: string
+          subcategory: string | null
+          upvotes: number | null
+          verified: boolean | null
+        }
+        Insert: {
+          answer: string
+          category: string
+          contributed_by?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string[] | null
+          last_updated?: string | null
+          question: string
+          subcategory?: string | null
+          upvotes?: number | null
+          verified?: boolean | null
+        }
+        Update: {
+          answer?: string
+          category?: string
+          contributed_by?: string | null
+          created_at?: string
+          id?: string
+          keywords?: string[] | null
+          last_updated?: string | null
+          question?: string
+          subcategory?: string | null
+          upvotes?: number | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       payment_verifications: {
         Row: {
           amount: number
@@ -808,6 +850,28 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_nepal_knowledge: {
+        Args: { category_filter?: string; search_query: string }
+        Returns: {
+          answer: string
+          category: string
+          contributed_by: string | null
+          created_at: string
+          id: string
+          keywords: string[] | null
+          last_updated: string | null
+          question: string
+          subcategory: string | null
+          upvotes: number | null
+          verified: boolean | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "nepal_knowledge_base"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
     }
     Enums: {
